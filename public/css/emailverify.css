@@ -1,0 +1,25 @@
+.verify-section {
+    position: relative;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.verify-section>* {
+    margin: 10px;
+}
+
+#otp {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#verify_result {
+    color: red;
+    position: relative;
+    top: 3rem;
+    visibility: hidden;
+}
+

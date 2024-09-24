@@ -1,0 +1,29 @@
+.contact-us-container .form-control {
+    min-width: 200px; /* Adjust this value as needed */
+    max-width: 700px; /* Adjust this value as needed */
+    width: 100%; /* Ensures that the form fields fill the available space */
+}
+
+.contact-us-container .form-width {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.contact-us-container .form-width>* {
+    margin: 0.5rem;
+}
+
+.contact-us-container .form-field {
+    margin-bottom: 1rem;
+}
+
+.contact-us-container .char-counter {
+    text-align: right;
+    font-size: 0.8rem;
+    font-style: italic;
+    color: black;
+    padding-right: 0.5rem;
+}
+.contact-us-container textarea {
+    resize: both;
+}

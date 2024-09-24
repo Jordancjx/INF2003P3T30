@@ -1,0 +1,6 @@
+/venv
+/.idea
+/__pycache__
+/controllers/__pycache__
+/models/__pycache__
+/config/__pycache__

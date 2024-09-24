@@ -1,0 +1,12 @@
+.membership-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* overflow-y: scroll; */
+}
+
+.register-container {
+    margin: 0% auto 0% auto;
+    padding: 5% 0 10% 0;
+    /* overflow-y: scroll; */
+}

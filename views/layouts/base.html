@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <base href="localhost/">
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Movie Rentals</title>
+    <link href="{{ url_for('static', filename='/css/style.css') }}" rel="stylesheet"/>
+    <link href="https://use.typekit.net/aqd3znp.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/locomotive-scroll@3.5.4/dist/locomotive-scroll.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" rel="stylesheet">
+    <script crossorigin="anonymous" src="https://kit.fontawesome.com/b3195d16b2.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script crossorigin="anonymous"
+            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+            src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <link href="{{ url_for('static', filename='/img/favicon.png') }}" rel='icon' sizes="16x16" type='image/x-icon'>
+    <style>
+        .nav-item {
+            text-align: center;
+        }
+        .nav-item:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body data-scroll-container>
+    {% include 'partials/_navbar.html' %}
+
+    <main>
+        {% block body %}
+        {% endblock %}
+    </main>
+
+    {% include 'partials/_footer.html' %}
+    <script src="{{ url_for('static', filename='/js/anime.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='/js/jquery-3.7.0.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='/js/locomotive.min.js') }}"></script>
+    <script crossorigin="anonymous"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let buttonToggle = () => {
+            const button = document.getElementById("menu-button").classList,
+                isopened = "is-opened";
+            let isOpen = button.contains(isopened);
+            if (isOpen) {
+                button.remove(isopened);
+                $(".mobileMenu").hide();
+            }
+            else {
+                button.add(isopened);
+                $(".mobileMenu").show();
+            }
+        }
+
+        const scroller = new LocomotiveScroll({
+            el: document.querySelector('[data-scroll-container]'),
+            smooth: true,
+            smoothMobile: false,
+        });
+        scroller.on('call', (func, args, obj) => {
+            this[func](args);
+        });
+
+        function reveal(args) {
+            var reveals = document.querySelectorAll(".is-inview");
+            for (var i = 0; i < reveals.length; i++) {
+                if (args === 'enter') {
+                    reveals[i].classList.add("active");
+                } else {
+                    reveals[i].classList.remove("active");
+                }
+
+            }
+        }
+
+        $(window).on('load', function () {
+            $('#loading').hide();
+        });
+
+        $(window).on("beforeunload", function () {
+            $('#loading').show();
+        });
+
+        $(document).ready(function () {
+            setTimeout(() => {
+                scroller.update();
+            }, 1000);
+
+        });
+
+        // Accordion items at the bottom of the screen open off the screen.
+        // This scrolls so that the whole item is visible.
+        $('.accordion-item').on('click', function() {
+            console.log('hello');
+            setTimeout(() => {
+                scroller.update();
+            }, 350);
+        })
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.accordion-item').forEach(function (item) {
+
+                // Listen for shown.bs.collapse event. Different from show.bs.collapse
+                // Needs to be shown.bs.collapse otherwise the item has no height.
+                item.addEventListener('click', function () {
+                    scroller.update();
+                });
+            });
+        });
+
+
+    </script>
+</body>
+</html>

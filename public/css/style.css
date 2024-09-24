@@ -1,0 +1,447 @@
+* {
+    padding: 0;
+    margin: 0;
+    font-family: "Lato", sans-serif;
+    box-sizing: border-box;
+  }
+  
+  /** Scrolling stuff, just ignore **/
+  
+  html.has-scroll-smooth {
+    overflow: hidden;
+  }
+  
+  html.has-scroll-dragging {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  .has-scroll-smooth body {
+    overflow: hidden;
+  }
+  
+  .has-scroll-smooth [data-scroll-container] {
+    min-height: 100vh;
+  }
+  
+  .c-scrollbar {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 11px;
+    height: 100%;
+    transform-origin: center right;
+    transition: transform 0.3s, opacity 0.3s;
+    opacity: 0;
+  }
+  
+  .c-scrollbar:hover {
+    transform: scaleX(1.45);
+  }
+  
+  .c-scrollbar:hover,
+  .has-scroll-scrolling .c-scrollbar,
+  .has-scroll-dragging .c-scrollbar {
+    opacity: 1;
+  }
+  
+  .c-scrollbar_thumb {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: black;
+    opacity: 0.5;
+    width: 7px;
+    border-radius: 10px;
+    margin: 2px;
+    cursor: -webkit-grab;
+    cursor: grab;
+  }
+  
+  .has-scroll-dragging .c-scrollbar_thumb {
+    cursor: -webkit-grabbing;
+    cursor: grabbing;
+  }
+  
+  [data-scroll-direction="horizontal"] .c-scrollbar_thumb {
+    right: auto;
+    bottom: 0;
+  }
+  
+  html {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  
+  body {
+    background-color: #faf6f2;
+  }
+  
+  footer a {
+    color: black;
+  }
+  
+  footer li a:hover {
+    text-decoration: underline;
+  }
+  
+  footer ul {
+    padding-left: 20px;
+  }
+  
+  footer li {
+    margin-bottom: 2px;
+  }
+  
+  .form-check-input[type="checkbox"] {
+    width: auto !important;
+    min-width: 1.5em;
+    min-height: 1.5em;
+    border-radius: 5px;
+    margin: 0;
+  }
+  
+  .form-check .form-check-input {
+    float: none;
+  }
+  
+  /** End of Scrolling stuff **/
+  
+  @media (min-width: 1200px) {
+  }
+  
+  .full-width {
+    width: 100%;
+  }
+  
+  .accordion {
+    width: 100%;
+    background: linear-gradient(to bottom right, #fff, #f7f7f7);
+    background: #f99d39;
+    margin: 0 auto;
+    border-radius: 3px;
+    box-shadow: 0 10px 15px -20px rgba(0, 0, 0, 0.3),
+      0 30px 45px -30px rgba(0, 0, 0, 0.3), 0 80px 55px -30px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mast {
+    height: 60vh;
+    margin-bottom: 3%;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: cover !important;
+  }
+  
+  .autocomplete {
+    /*the container must be positioned relative:*/
+    position: relative;
+    display: inline-block;
+  }
+  
+  .autocomplete-items {
+    position: absolute;
+    border: 1px solid #d4d4d4;
+    border-bottom: none;
+    border-top: none;
+    z-index: 999;
+    /*position the autocomplete items to be the same width as the container:*/
+    top: 100%;
+    left: 0;
+    right: 0;
+  }
+  .autocomplete-items div {
+    padding: 10px;
+    cursor: pointer;
+    background-color: #fff;
+    border-bottom: 1px solid #d4d4d4;
+  }
+  .autocomplete-items div:hover {
+    /*when hovering an item:*/
+    background-color: #e9e9e9;
+  }
+  .autocomplete-active {
+    /*when navigating through the items using the arrow keys:*/
+    background-color: DodgerBlue !important;
+    color: #ffffff;
+  }
+  
+  /** Color stuff! */
+  .text-primary {
+    color: #ff9019 !important;
+  }
+  
+  .bg-primary {
+    background-color: #ff9019 !important;
+  }
+  
+  .border-primary {
+    border-color: #ff9019 !important;
+  }
+  
+  .btn-primary {
+    background-color: #ff9019 !important;
+    color: black;
+    border: none !important;
+  }
+  
+  .btn-primary:hover {
+    color: black;
+    background-color: #d67207 !important;
+  }
+  
+  .logo {
+    font-size: 1.4rem;
+  }
+  
+  /* aboutus */
+  .aboutUs {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.349), rgba(0, 0, 0, 0.329));
+  }
+  
+  .aboutUsContainer {
+    justify-content: left;
+    padding-top: 0px;
+    padding-bottom: 30px;
+  }
+  
+  .aboutUsContainer img {
+    border: solid;
+    border-radius: 25px;
+    padding: 20px;
+    height: 80%;
+    width: 90%;
+  }
+  
+  .aboutUsHeading {
+    margin-bottom: 0;
+  }
+  
+  .sectionHeader {
+    padding-top: 50px;
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  
+  .sectionHeader h2 {
+    text-align: center;
+  }
+  
+  .aboutUsDetails {
+    padding-top: 60px;
+    padding-bottom: 20px;
+    text-align: center;
+  }
+  
+  .gettingStarted {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 40px;
+  }
+  
+  .aboutCol {
+    border-style: groove;
+    min-height: 150px;
+  }
+  
+  .aboutBody {
+    text-align: center;
+  }
+  
+  .aboutFooter {
+    text-align: center;
+  }
+  
+  .card-img-top {
+    height: 500px;
+  }
+  
+  /* footer */
+  
+  .menu-footer ul {
+    padding-left: 0;
+  }
+  
+  .video {
+    height: 500px;
+  }
+  
+  #loading {
+    position: fixed;
+    display: block;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    text-align: center;
+    background-color: #0000002f;
+    z-index: 99;
+  }
+  
+  #loading-image {
+    position: absolute;
+    top: 45%;
+    z-index: 100;
+    color: white;
+  }
+  
+  /** Homepage */
+  
+  .card-overlay {
+    position: absolute;
+    opacity: 0;
+    background-color: rgb(0, 0, 0, 0);
+    z-index: 2;
+    transition: all 0.2s;
+  }
+  
+  .card-container {
+    height: 400px;
+    position: relative;
+    cursor: pointer;
+  }
+  
+  .card-img-home {
+    object-fit: cover;
+    object-position: center;
+  }
+  
+  .carousel-inner {
+    height: 800px;
+  }
+  
+  .poster-image {
+    object-fit: cover;
+    object-position: 50% 30%;
+    background-color: black;
+    filter: brightness(50%);
+  }
+  
+  .contact-us-home {
+    border-radius: 5px;
+    height: 400px;
+  }
+  
+      .feedback-container {
+          max-width: 60vw;
+          margin: 0 auto;
+          padding: 20px;
+      }
+  
+      .feedback-container>h1 {
+          text-align: center;
+          padding: 20px;
+      }
+  
+      .message {
+          margin-top: 15px;
+          margin-bottom: 15;
+          border: 1px solid #ccc;
+          padding: 1rem;
+          background-color: #fff;
+          border-radius: 15px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+  
+      .reply {
+          padding: 10px;
+          background-color: #ffc;
+          border: 1px solid #ccc;
+          border-radius: 10px;
+      }
+  
+      .reply p {
+          margin: 5px 0;
+      }
+  
+      .timestamp {
+          text-align: right;
+          font-style: italic;
+          font-size: 0.8em;
+          color: gray;
+      }
+  
+  
+  /** Phones */
+  @media only screen and (max-width: 666px) {
+  
+    header {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+  
+    .nav-item {
+      margin-top: 10px !important;
+    }
+  
+    .card-overlay {
+      /* opacity: 0.5 !important; */
+      display: flex !important;
+    }
+  
+    #about-us-home, #contact-us-home {
+      flex-flow: column;
+    }
+  
+    #contact-us-home {
+      height: 250px;
+      align-items: center;
+      justify-content: center;
+    }
+  
+    #contact-us-home-img {
+      display: none;
+    }
+  
+    #about-us-home > div {
+      margin-top: 20px;
+    }
+  
+    #about-us-home .w-75 {
+      width: 100% !important;
+    }
+  
+    .carousel-inner {
+      height: 600px;
+    }
+  
+    #single_movie_deets {
+      flex-flow:column-reverse !important;
+    }
+  
+    .movie-image {
+      justify-content: center !important;
+      margin-bottom: 15px;
+    }
+  
+    .review-form {
+      width: 100% !important;
+    }
+  
+    .genres, .directed {
+      flex-flow: column;
+    }
+  
+    .mast {
+      height: 40vh;
+    }
+  
+    .pagination {
+      flex-wrap: wrap;
+      display: flex;
+      justify-content: center;
+    }
+  }
+  
+  /** Tablets */
+  @media only screen and (max-width: 1099px) {
+    .nav-item {
+      margin-left: 0 !important;
+    }
+  }
+  

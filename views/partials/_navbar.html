@@ -1,0 +1,56 @@
+<nav class="navbar navbar-expand-lg" aria-label="Main Navigation">
+    <div class="container-fluid">
+        <a class="navbar-brand text-primary logo display-5 col-1" href="/">
+            <img src="{{ url_for('static', filename='/img/cinema_stream_logo.png') }}" alt="Cinema Stream"
+                 style="height: 60px">
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
+            <ul class="navbar-nav mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" href="/movies">Movies</a>
+                </li>
+
+                <li class="nav-item ms-4">
+                    <a class="nav-link" href="/about-us">About Us</a>
+                </li>
+                <!-- <li class="nav-item ms-4">
+                    <a class="nav-link" href="/user/orderHistory.php">History</a>
+                </li>
+
+                <li class="nav-item ms-4">
+                    <a class="nav-link" href="/user/user_library.php">Library</a>
+                </li>
+                <li class="nav-item ms-4">
+                    <a class="nav-link" href="/user/profile.php">Profile</a>
+                </li>
+                <li class="nav-item ms-4">
+                    <a class="nav-link" href="/user/mailbox.php">Mailbox</a>
+                </li>
+                 -->
+                <li class="nav-item ms-4">
+                    <a class="nav-link" href="/user/contact.php">Contact Us</a>
+                </li>
+
+
+                <!-- <li class="nav-item ms-4">
+                    <?php if (isset($_SESSION['user_id'])) { ?>
+                        <a class="btn btn-primary px-4 py-2" href="/php_processes/logoutProcess.php">Logout</a>
+                    <?php } else { ?>
+                        <a class="btn btn-primary px-4 py-2" href="/user/login.php">Login/Sign Up</a>
+                    <?php } ?>
+                </li> -->
+
+                <!-- <?php if (isset($_SESSION['admin_access']) && $_SESSION["admin_access"] == 1) { ?>
+                    <li class="nav-item ms-4">
+                        <a class="btn btn-primary px-4 py-2" href="/admin">Admin Dashboard</a>
+                    </li>
+                <?php } ?> -->
+            </ul>
+        </div>
+    </div>
+</nav>

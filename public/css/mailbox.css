@@ -1,0 +1,45 @@
+.feedback-section .feedback-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.feedback-section .feedback-container>h1 {
+    text-align: center;
+    padding: 20px;
+}
+
+.feedback-section .message {
+    margin-top: 15px;
+    margin-bottom: 15;
+    border: 1px solid #ccc;
+    padding: 1rem;
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.feedback-section .reply {
+    padding: 10px;
+    background-color: #ffc;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    margin-top: 10px;
+}
+
+.feedback-section .reply p {
+    margin: 5px 0;
+}
+
+.feedback-section .reply-toggle {
+    cursor: pointer;
+    color: blue;
+    text-decoration: underline;
+}
+
+.feedback-section .timestamp {
+    text-align: right;
+    font-style: italic;
+    font-size: 0.8em;
+    color: black;
+}

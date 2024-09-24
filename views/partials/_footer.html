@@ -1,0 +1,89 @@
+<footer class='mt-3 py-5 flex-column justify-center align-center' style="background-color: #FAEAD5;"
+        data-scroll-section>
+    <div class="container d-flex">
+        <div class="row">
+            <div class="col-12 col-md-3 mb-4">
+                <h2>Quick Links</h2>
+                <ul class="menu-footer list-unstyled">
+                    <li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-59"><a
+                            href="/termsofservice.php">Terms of
+                        Service</a></li>
+                    <li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-57"><a
+                            href="/about-us">About Us</a></li>
+                    <li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-59"><a
+                            href="/user/contact.php">Contact Us</a></li>
+                </ul>
+            </div>
+
+            <div class="col-12 col-md-3 mb-3">
+                <h2>Support</h2>
+                <ul class="menu-footer list-unstyled">
+                    <li><a href="" target="_blank"><i class="fa-brands fa-tiktok"></i>
+                        @CinemaStream</a></li>
+                    <li><a href="" target="_blank"><i class="fa-brands fa-instagram"></i> @CinemaStream</a></li>
+                    <li><i class="fa fa-envelope"></i><a href=""> CinemaStream@gmail.com</a>
+                    </li>
+                    <li><i class="fa fa-whatsapp"></i><a href=""> Whatsapp us! </a></li>
+                </ul>
+            </div>
+
+            <div class="col-12 col-md-3 mb-3">
+                <h2>Browse</h2>
+                <ul class="menu-footer list-unstyled">
+                    <li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-60"><a
+                            href="/movies">Movies</a></li>
+                    <li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-61"><a
+                            href="/user/orderHistory.php">Ordered Movies</a></li>
+                    <li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-62"><a
+                            href="/user/cart.php">Cart</a></li>
+                </ul>
+            </div>
+
+            <div class="col-12 col-md-3 mb-3">
+                <h2>Subscribe</h2>
+                <p>Subscribe to the CinemaStream mailing list to receive updates on movies, tv-series and news of top
+                    movies.</p>
+                <div class="input-subscribe" style="display:flex; align-items:center;">
+                    <input type="email" id="subscribe" name="subscribe" class="form-control"
+                           placeholder="Put your email" aria-label="Subscribe" style="flex-grow:1; height:40px;
+                                    border-bottom-right-radius: 0; border-top-right-radius: 0;">
+                    <button class="btn btn-primary" type="button" data-bs-toggle="modal"
+                            data-bs-target="#subscribeModal" style="height:40px; border-bottom-left-radius: 0;
+                        border-top-left-radius: 0; margin-left: -1px;">Subscribe
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="d-flex justify-content-center mt-4">
+        <div class="col-12 p-0 text-center text-md-center">
+            <p>© 2024, Cinema Stream Pte. Ltd.</p>
+            <p>All Rights Reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<div id="loading">
+    <div class="text-center d-flex justify-content-center align-items-center loading-image w-100 h-100">
+        <img src="{{ url_for('static', filename='/img/Dual_Ball.gif') }}" alt="" style="width:100px; height: 100px">
+    </div>
+</div>
+
+<div class="modal fade" id="subscribeModal" aria-labelledby="subscribeModalLabel" aria-hidden="true">
+    <div class="modal-dialog sm-5">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title fs-5" id="subscribeModalLabel">Subscribe to CinemaStream</h5>
+            </div>
+            <div class="modal-body">
+                <p>Thank you for subscribing to CinemaStream. You will now receive updates on movies,
+                    tv-series, and news about top movies directly to your inbox</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
