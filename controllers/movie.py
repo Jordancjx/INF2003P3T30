@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for
-from sqlalchemy import text
 import config.constants
 from config.dbConnect import db
 from models.movie import Movie
+from models.review import Review
 
 
 movies_bp = Blueprint('movie', __name__, template_folder=config.constants.template_dir,
@@ -12,12 +12,13 @@ movies_bp = Blueprint('movie', __name__, template_folder=config.constants.templa
 @movies_bp.route('/single/<int:id>', methods=['GET'])
 def single(id):
     movie = Movie.query.get(id)
+    reviews = Review.query.filter_by(movies_id=id)
 
     if movie is None:
         flash('Movie not found', 'error')
         return redirect(url_for('index.index'))
     
-    return render_template('movie/single.html', movie=movie)
+    return render_template('movie/single.html', movie=movie, review=reviews)
 
 
 # Api to update movies, won't render any page

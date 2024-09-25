@@ -101,8 +101,8 @@
 
                 <div class="full-width mb-3">
                     <p><strong>Add review</strong></p>
-                    <form method="post" action="/php_processes/addReview.php" class="form-group review-form" style="width: 40%">
-                        <input type="hidden" name="movie_id" value="<?php echo $movie['id'] ?>">
+                    <form method="post" action="/review/api/add" class="form-group review-form" style="width: 40%">
+                        <input type="hidden" name="movie_id" value="{{movie.id}}">
                         <label for="rating">Select a rating:</label>
                         <select name="rating" class="form-select mb-2" aria-label="rating">
                             <option value="5">5/5</option>
@@ -123,7 +123,7 @@
                     <div class="card h-100">
                         <div class="card-body mt-2">
                             {%for i in range(1, review.rating + 1) %}
-                                <img style="width:20px; height: 20px;" class="mb-1" src="/static/star.png" alt="star">
+                                <img style="width:20px; height: 20px;" class="mb-1" src="{{url_for('static', filename='/img/star.png }}" alt="star">
                             {%endfor%}
                             <p class="card-text">
                                 {{review.body}}

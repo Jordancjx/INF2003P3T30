@@ -4,6 +4,9 @@ from datetime import timedelta
 from config.dbConnect import db
 from controllers.movie import movies_bp
 from controllers.index import index_bp
+from controllers.admin import admin_bp
+from controllers.user import user_bp
+from controllers.review import reviews_bp
 
 import config.constants
 
@@ -21,6 +24,9 @@ toastr = Toastr(app)
 # Register blueprints
 app.register_blueprint(index_bp)
 app.register_blueprint(movies_bp)
+app.register_blueprint(admin_bp)
+app.register_blueprint(user_bp)
+app.register_blueprint(reviews_bp)
 
 from models.movie import Movie
 from models.user import User
