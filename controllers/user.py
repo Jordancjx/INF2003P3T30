@@ -3,10 +3,17 @@ import config.constants
 from config.dbConnect import db
 from models.user import User
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+import os
 
+UPLOAD_FOLDER = 'public/profile_pics'  # Ensure this folder exists
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 user_bp = Blueprint('user', __name__, template_folder=config.constants.template_dir,
                      static_folder=config.constants.static_dir, static_url_path='/public', url_prefix='/user')
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 #Register
 @user_bp.route('/register')
@@ -17,6 +24,26 @@ def register():
 @user_bp.route('/login')
 def login():
     return render_template('/user/login.html')
+
+    
+#Logout
+@user_bp.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    session.pop('admin', None)
+    return redirect(url_for('index.index'))
+
+#Profile
+@user_bp.route('/profile')
+def getProfile():
+    # Check if user is logged in
+    if 'user_id' not in session:
+        flash("Please log in to view your profile.", "error")
+        return redirect(url_for('user.login'))
+    
+    user = User.query.get_or_404(session['user_id']) 
+    
+    return render_template('/user/profile.html', user = user)
 
 
 #Register API; Does not render any page
@@ -65,11 +92,34 @@ def login_process():
     else:
         flash("Invalid Username/email or Password", "error")
         return redirect(url_for('user.login'))
+
+@user_bp.route('/api/update_profile', methods = ["POST"])
+def update_profile():
+    if 'user_id' not in session:
+        flash("Please log in to update your profile.", "error")
+        return redirect(url_for('user.login'))
     
-#Logout
-@user_bp.route('/logout')
-def logout():
-    session.pop('user_id', None)
-    session.pop('admin', None)
-    return redirect(url_for('index.index'))
+    user = User.query.get_or_404(session['user_id'])
+    user.fname = request.form.get('fname')
+    user.lname = request.form.get('lname')
+    user.email = request.form.get('email')
     
+    # Update password if provided
+    password = request.form.get('password')
+    if password:
+        user.password = generate_password_hash(password)
+    
+    if 'profile_pic' in request.files:
+        file = request.files['profile_pic']
+        
+        if file.filename != '':
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(UPLOAD_FOLDER, filename)
+                file.save(file_path)
+                
+                user.profile_pic_url = f"/{file_path}"
+                
+    db.session.commit()
+    flash("Profile updated successfully!", "success")
+    return redirect(url_for('user.getProfile'))
