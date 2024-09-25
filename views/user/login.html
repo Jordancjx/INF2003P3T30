@@ -1,0 +1,25 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+
+<section style = "min-height:51vh" class = "container d-flex justify-content-center align-items-center flex-column" data-scroll-section>
+    <div class = "w-75">
+        <h2>Login</h2>
+    </div>
+    <form class = "w-75" action = "/user/api/login" method = "POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="exampleInputEmail1" class="form-label">Username or Email</label>
+            <input type="text" class="form-control" id="exampleInputEmail1" name="username">
+        </div>
+        <div class="mb-3">
+          <label for="exampleInputPassword1" class="form-label">Password</label>
+          <input type="password" name="password" class="form-control" id="exampleInputPassword1">
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+      </form>
+    <div class = "w-75 mt-2">
+        <p>Don't have an account? Click <a href = "/user/register">here</a> to register</p>
+    </div>  
+</section>
+
+   
+{% endblock %}

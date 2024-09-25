@@ -36,20 +36,20 @@
                     <a class="nav-link" href="/user/contact.php">Contact Us</a>
                 </li>
 
-
-                <!-- <li class="nav-item ms-4">
-                    <?php if (isset($_SESSION['user_id'])) { ?>
-                        <a class="btn btn-primary px-4 py-2" href="/php_processes/logoutProcess.php">Logout</a>
-                    <?php } else { ?>
-                        <a class="btn btn-primary px-4 py-2" href="/user/login.php">Login/Sign Up</a>
-                    <?php } ?>
-                </li> -->
-
-                <!-- <?php if (isset($_SESSION['admin_access']) && $_SESSION["admin_access"] == 1) { ?>
+                {% if 'user_id' in session %}
+                    {%if 'admin' in session %}
+                        <li class="nav-item ms-4">
+                            <a class="btn btn-primary px-4 py-2" href="/admin">Admin Dashboard</a>
+                        </li>
+                    {%endif%}
                     <li class="nav-item ms-4">
-                        <a class="btn btn-primary px-4 py-2" href="/admin">Admin Dashboard</a>
+                        <a class="btn btn-primary px-4 py-2" href="/user/logout">Logout</a>
                     </li>
-                <?php } ?> -->
+                {%else%}
+                    <li class="nav-item ms-4">
+                        <a class="btn btn-primary px-4 py-2" href="/user/login">Login/Sign Up</a>
+                    </li>
+                {%endif%}
             </ul>
         </div>
     </div>

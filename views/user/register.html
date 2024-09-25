@@ -1,0 +1,40 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+
+<section style = "min-height:51vh" class = "container d-flex flex-column justify-content-center align-items-center" data-scroll-section>
+    <div class = "w-75 mb-2">
+        <h2>Register</h2>
+    </div>
+    <form class = "w-75" action = "/user/api/register" method = "POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="exampleInputEmail1" class="form-label">Username</label>
+            <input type="text" class="form-control" id="exampleInputEmail1" name="username">
+        </div>
+        <div class="mb-3">
+            <label for="exampleInputEmail1" class="form-label">Name</label>
+            <div class="d-flex flex-row w-100">
+                <div class="pe-1 w-100">
+                    <input type="text" class="form-control" id="exampleInputEmail1" placeholder="First Name" name="fname" aria-describedby="emailHelp">
+                </div>
+                <div class="ps-1 w-100">
+                    <input type="text" class="form-control" id="exampleInputEmail1" placeholder="Last Name" name="lname" aria-describedby="emailHelp">
+                </div>
+            </div>
+        </div>
+        <div class="mb-3">
+          <label for="exampleInputEmail1" class="form-label">Email address</label>
+          <input type="email" class="form-control" id="exampleInputEmail1" name="email" aria-describedby="emailHelp">
+        </div>
+        <div class="mb-3">
+          <label for="exampleInputPassword1" class="form-label">Password</label>
+          <input type="password" name="password" class="form-control" id="exampleInputPassword1">
+        </div>
+        <button type="submit" class="btn btn-primary">Register</button>
+      </form>
+      <div class = "w-75 mt-2">
+        <p>Have an account? Click <a href = "/user/login">here</a> to login</p>
+    </div>  
+</section>
+
+   
+{% endblock %}

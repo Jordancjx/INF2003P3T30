@@ -1,0 +1,132 @@
+{% extends "layouts/base.html" %} {% block body %}
+<div class="container">
+  <div class="full-width f-flex column">
+    <h1>Manage All Users</h1>
+    <div class="full-width d-flex mb-3">
+      <button
+        type="button"
+        class="btn btn-primary"
+        data-bs-toggle="modal"
+        data-bs-target="#staticBackdrop"
+      >
+        Add Users
+      </button>
+    </div>
+    <div class="accordion" id="accordionExample2" style="box-shadow: none">
+      {%for user in users%}
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="heading-{{user.id}}">
+          <button
+            class="accordion-button collapsed"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#collapse-{{user.id}}"
+            aria-expanded="false"
+            aria-controls="collapse-{{user.id}}"
+          >
+            {{user.username}}
+          </button>
+        </h2>
+        <div
+          id="collapse-{{user.id}}"
+          class="accordion-collapse collapse p-3"
+          aria-labelledby="heading-{{user.id}}"
+          data-bs-parent="#accordionExample2"
+        >
+          <div class="table-responsive mb-3">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col"></th>
+                  <th scope="col">First Name</th>
+                  <th scope="col">Last Name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Email Validated</th>
+                  <th scope="col">Admin Controls</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row"></th>
+                  <td>
+                    {% if user.fname %}
+                        {{user.fname}}
+                    {%endif%}
+                  </td>
+                  <td>
+                    {% if user.lname %}
+                        {{user.lname}}
+                    {%endif%}
+                  </td>
+                  <td>
+                    {% if user.email %}
+                        {{user.email}}
+                    {%endif%}
+                  </td>
+                  <td>
+                    {% if user.email_validated %}
+                        {{user.email_validated}}
+                    {%endif%}
+                  </td>
+                  <td>
+                    {% if user.admin_controls %}
+                        {{user.admin_controls}}
+                    {%endif%}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="d-flex column">
+            <div class="d-flex">
+                {% if session.get('user_id') != user.id %}
+                <form class="mr-3" action="/admin/delete_user" method="POST">
+                <input
+                    type="hidden"
+                    name="user_id"
+                    value="{{user.id}}"
+                />
+                <input
+                    class="btn btn-danger"
+                    type="submit"
+                    value="Delete User"
+                />
+                </form>
+                {% if user.admin_controls == True %}
+                    <form class="mr-3" action="/admin/revoke_admin" method="POST">
+                    <input
+                        type="hidden"
+                        name="user_id"
+                        value="{{user.id}}"
+                    />
+                    <input
+                        class="btn btn-primary"
+                        type="submit"
+                        value="Revoke Admin Controls"
+                    />
+                    </form>
+                {%else%}
+                    <form class="mr-3" action="/admin/admin_user" method="POST">
+                        <input
+                        type="hidden"
+                        name="user_id"
+                        value="{{user.id}}"
+                        />
+                        <input
+                        class="btn btn-primary"
+                        type="submit"
+                        value="Make User Admin"
+                        />
+                    </form>
+                {%endif%}
+                {%endif%}
+            </div>
+          </div>
+        </div>
+      </div>
+      {%endfor%}
+    </div>
+  </div>
+</div>
+{% endblock %}
