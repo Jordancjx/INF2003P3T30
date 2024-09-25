@@ -1,4 +1,6 @@
 from flask import Flask
+from flask_toastr import Toastr
+from datetime import timedelta
 from config.dbConnect import db
 from controllers.movie import movies_bp
 from controllers.index import index_bp
@@ -12,6 +14,9 @@ app = Flask(__name__, template_folder=config.constants.template_dir, static_fold
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{config.constants.database_file}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
+
+# Init toastr
+toastr = Toastr(app)
 
 # Register blueprints
 app.register_blueprint(index_bp)
@@ -31,4 +36,6 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.debug = True
+    app.permanent_session_lifetime = timedelta(hours=2)
+    app.secret_key = config.constants.app_secret_key
     app.run()

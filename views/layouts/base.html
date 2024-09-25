@@ -23,6 +23,8 @@
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <link href="{{ url_for('static', filename='/img/favicon.png') }}" rel='icon' sizes="16x16" type='image/x-icon'>
+    {{ toastr.include_toastr_css() }}
+    {{ toastr.message() }}
     <style>
         .nav-item {
             text-align: center;
@@ -48,6 +50,7 @@
     <script crossorigin="anonymous"
             integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
             src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {{ toastr.include_toastr_js() }}
     <script>
         let buttonToggle = () => {
             const button = document.getElementById("menu-button").classList,
