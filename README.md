@@ -7,4 +7,9 @@
 pip install requirements.txt
 ```
 
+Please download the [TMDB dataset](https://www.kaggle.com/datasets/asaniczka/tmdb-movies-dataset-2023-930k-movies/data)
+and place the CSV file in the 'data' folder.
+
+Rename it to 'TMDB_dataset.csv'
+
 Run app.py
