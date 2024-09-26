@@ -18,7 +18,7 @@ def single(id):
         flash('Movie not found', 'error')
         return redirect(url_for('index.index'))
     
-    return render_template('movie/single.html', movie=movie, review=reviews)
+    return render_template('movie/single.html', movie=movie, reviews=reviews)
 
 
 # Api to update movies, won't render any page

@@ -19,12 +19,8 @@ def fetch_poster_url(movie_id):
 
 def clean_and_insert_movies():
     # Load CSV
-    df = pd.read_csv(tmdb_dataset_file, sep='|', on_bad_lines='skip',
+    df = pd.read_csv(tmdb_dataset_file, on_bad_lines='skip', engine='python',
                      dtype='unicode')
-
-    # new_columns = df.columns[0].split(',')
-    # df.columns = new_columns
-    print(df.shape)
 
     # Drop unwanted columns
     df = df.drop(columns=['vote_count', 'status', 'revenue', 'backdrop_path', 'budget', 'homepage',
@@ -36,6 +32,7 @@ def clean_and_insert_movies():
     count = 0
 
     # Iterate through the dataset and fetch poster URLs
+    print("Adding movies...")
     try:
         for index, row in df.iterrows():
             tmdb_id = row['id']
