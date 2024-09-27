@@ -81,7 +81,7 @@
             </div>
             <div class="col-xl-6 col-lg-6 col-12 d-flex flex-column">
                 <div class="movie-image d-flex justify-content-end align-items-center">
-                    <img class="w-75" src="{{url_for('static', filename = 'posters/' + movie.image_url) }}" alt="movie-poster">
+                    <img class="w-75" src="https://image.tmdb.org/t/p/w500{{movie.image_url}}" alt="{{movie.name}}">
                 </div>
             </div>
         </div>

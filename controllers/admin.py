@@ -13,9 +13,9 @@ admin_bp = Blueprint('admin', __name__, template_folder=config.constants.templat
 @admin_bp.route('/')
 def adminIndex():
     with current_app.app_context():
-        sql=text("SELECT * FROM users")
-        result=db.session.execute(sql)
-        users=result.fetchall()
+        sql = text("SELECT * FROM users")
+        result = db.session.execute(sql)
+        users = result.fetchall()
         return render_template('/admin/dashboard.html', users=users)
 
 
@@ -23,8 +23,8 @@ def adminIndex():
 @admin_bp.route('/delete_user', methods=["POST"])
 def deleteUser():
     with current_app.app_context():
-        sql=text("DELETE FROM users WHERE id = :id")
-        db.session.execute(sql, {"id":request.form.get('user_id')})
+        sql = text("DELETE FROM users WHERE id = :id")
+        db.session.execute(sql, {"id": request.form.get('user_id')})
         db.session.commit()  # Commit changes to the database
         flash('User deleted successfully!')
 
@@ -35,8 +35,8 @@ def deleteUser():
 @admin_bp.route('/admin_user', methods=["POST"])
 def adminUser():
     with current_app.app_context():
-        sql=text("UPDATE users SET admin_controls = 1 WHERE id = :id")
-        db.session.execute(sql, {"id":request.form.get('user_id')})
+        sql = text("UPDATE users SET admin_controls = 1 WHERE id = :id")
+        db.session.execute(sql, {"id": request.form.get('user_id')})
         db.session.commit()
         flash('Granted admin privileges successfully!')
 
@@ -47,8 +47,8 @@ def adminUser():
 @admin_bp.route('/revoke_admin', methods=["POST"])
 def revokeUser():
     with current_app.app_context():
-        sql=text("UPDATE users SET admin_controls = 0 WHERE id = :id")
-        db.session.execute(sql, {"id":request.form.get('user_id')})
+        sql = text("UPDATE users SET admin_controls = 0 WHERE id = :id")
+        db.session.execute(sql, {"id": request.form.get('user_id')})
         db.session.commit()
         flash('Revoked admin privileges successfully')
 

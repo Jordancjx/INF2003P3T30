@@ -35,6 +35,7 @@ def login():
 def logout():
     session.pop('user_id', None)
     session.pop('admin', None)
+    flash('Logged out successfully!', 'success')
     return redirect(url_for('index.index'))
 
 
@@ -47,10 +48,10 @@ def getProfile():
         return redirect(url_for('user.login'))
 
     with current_app.app_context():
-        sql=text("SELECT * FROM users WHERE id = :id")
-        result=db.session.execute(sql, {"id": session['user_id']})
-        user=result.fetchone()
-        
+        sql = text("SELECT * FROM users WHERE id = :id")
+        result = db.session.execute(sql, {"id": session['user_id']})
+        user = result.fetchone()
+
         if user is None:
             flash("User not found.", "error")
             return redirect(url_for('user.login'))
@@ -62,30 +63,33 @@ def getProfile():
 @user_bp.route('/api/register', methods=["POST"])
 def register_process():
     hashed_password = generate_password_hash(request.form.get('password'), method='pbkdf2:sha256', salt_length=16)
-    username=request.form.get('username')
-    fname=request.form.get('fname')
-    lname=request.form.get('lname')
-    email=request.form.get('email')
-    
+    username = request.form.get('username')
+    fname = request.form.get('fname')
+    lname = request.form.get('lname')
+    email = request.form.get('email')
+
     if not all([username, fname, lname, email, hashed_password]):
         flash("Not all fields are filled", "error")
         return redirect(url_for('user.register'))
-    
+
     with current_app.app_context():
-        sql=text("SELECT * FROM users WHERE username = :username OR email = :email")
-        result=db.session.execute(sql, {"username":username, "email":email})
-        existing_user=result.fetchone()
-    
+        sql = text("SELECT * FROM users WHERE username = :username OR email = :email")
+        result = db.session.execute(sql, {"username": username, "email": email})
+        existing_user = result.fetchone()
+
         if existing_user:
             flash("Username or Email already exists", "error")
             return redirect(url_for('user.register'))
-        
-        insert=text("INSERT INTO users (username, fname, lname, email, password, email_validated, admin_controls) VALUES (:username, :fname, :lname, :email, :password, :email_validated, :admin_controls)")
+
+        insert = text(
+            "INSERT INTO users (username, fname, lname, email, password, email_validated, admin_controls) "
+            "VALUES (:username, :fname, :lname, :email, :password, :email_validated, :admin_controls)")
 
         try:
-            db.session.execute(insert, {"username": username, "fname":fname, "lname":lname, "email":email, "password":hashed_password, "email_validated":False, "admin_controls":False})
+            db.session.execute(insert, {"username": username, "fname": fname, "lname": lname, "email": email,
+                                        "password": hashed_password, "email_validated": False, "admin_controls": False})
             db.session.commit()
-            flash('Registered successfully!')
+            flash('Registered successfully!', 'success')
             return redirect(url_for('user.login'))
         except Exception as e:
             db.session.rollback()
@@ -100,16 +104,18 @@ def login_process():
     password = request.form.get('password')
 
     with current_app.app_context():
-        sql=text("SELECT * FROM users WHERE username = :identifier OR email = :identifier LIMIT 1")
-        result=db.session.execute(sql, {"identifier":identifier})
-        user=result.fetchone()
-    
-    user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
+        sql = text("SELECT * FROM users WHERE username = :identifier OR email = :identifier LIMIT 1")
+        result = db.session.execute(sql, {"identifier": identifier})
+        user = result.fetchone()
+
     if user and check_password_hash(user.password, password):
-        if user.admin_controls == True:
+        if user.admin_controls:
             session['admin'] = True
         session['user_id'] = user.id
+
+        flash('Logged in successfully!', 'success')
         return redirect(url_for('index.index'))
+
     else:
         flash("Invalid Username/email or Password", "error")
         return redirect(url_for('user.login'))
@@ -126,7 +132,7 @@ def update_profile():
     lname = request.form.get('lname')
     email = request.form.get('email')
     password = request.form.get('password')
-    
+
     profile_pic_url = None
     if 'profile_pic' in request.files:
         file = request.files['profile_pic']
@@ -145,29 +151,28 @@ def update_profile():
                 "email": email,
                 "user_id": user_id
             }
-            
+
             updatesql = "UPDATE users SET fname = :fname, lname = :lname, email = :email"
-            
+
             if profile_pic_url:
                 updatesql += ", profile_pic_url = :profile_pic_url"
                 params["profile_pic_url"] = profile_pic_url
-                
+
             if password:
                 hashed_password = generate_password_hash(password)
                 updatesql += ", password = :password"
                 params["password"] = hashed_password
-                
+
             updatesql += " WHERE id = :user_id"
-            
+
             db.session.execute(text(updatesql), params)
             db.session.commit()
 
             flash("Profile updated successfully!", "success")
             return redirect(url_for('user.getProfile'))
-        
+
         except Exception as e:
             db.session.rollback()
             print(e)
             flash("An error occurred while updating the profile", "error")
             return redirect(url_for('user.getProfile'))
-    

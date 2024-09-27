@@ -1,22 +1,22 @@
-<nav class="navbar navbar-expand-lg" aria-label="Main Navigation" data-scroll-section>
+<nav aria-label="Main Navigation" class="navbar navbar-expand-lg" data-scroll-section>
     <div class="container-fluid">
-        <a class="navbar-brand text-primary logo display-5 col-1" href="/">
-            <img src="{{ url_for('static', filename='/img/cinema_stream_logo.png') }}" alt="Cinema Stream"
+        <a class="navbar-brand logo display-5 col-1" href="/">
+            <img alt="Cinema Stream" src="{{ url_for('static', filename='/img/cinema_stream_logo.png') }}"
                  style="height: 60px">
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                aria-expanded="false" aria-label="Toggle navigation">
+        <button aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"
+                class="navbar-toggler" data-bs-target="#navbarSupportedContent"
+                data-bs-toggle="collapse" type="button">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
-            <ul class="navbar-nav mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link" href="/movies">Movies</a>
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item ms-4">
+                    <a class="nav-link text-white rounded" href="/">Movies</a>
                 </li>
 
                 <li class="nav-item ms-4">
-                    <a class="nav-link" href="/about-us">About Us</a>
+                    <a class="nav-link text-white rounded" href="/about-us">About Us</a>
                 </li>
                 <!-- <li class="nav-item ms-4">
                     <a class="nav-link" href="/user/orderHistory.php">History</a>
@@ -31,27 +31,34 @@
                 </li>
                  -->
                 <li class="nav-item ms-4">
-                    <a class="nav-link" href="/user/contact.php">Contact Us</a>
+                    <a class="nav-link text-white" href="/user/contact.php">Contact Us</a>
                 </li>
 
                 {% if 'user_id' in session %}
-                <li class="nav-item ms-4"></li>
-                    <a class="nav-link" href="/user/profile">Profile</a>
+                <li class="nav-item ms-4">
+                    <a class="btn btn-md btn-info text-white" href="/user/profile"><i class="fas fa-id-card mr-1"></i> Profile</a>
                 </li>
-                    {%if 'admin' in session %}
-                        <li class="nav-item ms-4">
-                            <a class="btn btn-primary px-4 py-2" href="/admin">Admin Dashboard</a>
-                        </li>
-                    {%endif%}
-                    <li class="nav-item ms-4">
-                        <a class="btn btn-primary px-4 py-2" href="/user/logout">Logout</a>
-                    </li>
+                {% endif %}
+                {%if 'admin' in session %}
+                <li class="nav-item ms-4">
+                    <a class="nav-link text-white" href="/admin">Admin Dashboard</a>
+                </li>
+                {%endif%}
+                {% if 'user_id' in session %}
+
+                <li class="nav-item ms-4">
+                    <a class="btn btn-danger" href="/user/logout">Logout</a>
+                </li>
                 {%else%}
-                    <li class="nav-item ms-4">
-                        <a class="btn btn-primary px-4 py-2" href="/user/login">Login/Sign Up</a>
-                    </li>
+                <li class="nav-item ms-4">
+                    <a class="nav-link text-white" href="/user/login">Login</a>
+                </li>
+                <li class="nav-item ms-4">
+                    <a class="nav-link text-white" href="/user/register">Sign up</a>
+                </li>
                 {%endif%}
             </ul>
+
         </div>
     </div>
 </nav>
