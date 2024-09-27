@@ -7,7 +7,7 @@ from controllers.index import index_bp
 from controllers.admin import admin_bp
 from controllers.user import user_bp
 from controllers.review import reviews_bp
-from utilities.movie import clean_and_insert_movies
+from utilities.movie import clean_insert_movies
 
 import config.constants
 
@@ -41,11 +41,13 @@ with app.app_context():
     # Create tables
     db.create_all()
 
-    # Insert movies
-    clean_and_insert_movies()
-
 if __name__ == '__main__':
+    # App config
     app.debug = True
     app.permanent_session_lifetime = timedelta(hours=2)
     app.secret_key = config.constants.app_secret_key
+
+    with app.app_context():
+        # Insert movies (15-20 min)
+        clean_insert_movies()
     app.run()

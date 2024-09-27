@@ -10,7 +10,7 @@ class Movie(db.Model):
     release_date = db.Column(db.String(255), nullable=False)
     runtime = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Numeric(10, 0), default=0)
-    image_url = db.Column(db.Text, nullable=False)
+    image_url = db.Column(db.Text)
     trailer_link = db.Column(db.String(255), nullable=True)
     imdb_id = db.Column(db.Integer, nullable=False)
     tmdb_id = db.Column(db.Integer, nullable=False)

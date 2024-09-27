@@ -1,4 +1,6 @@
 import requests
+import asyncio
+import aiohttp
 import pandas as pd
 from models.movie import Movie
 from config.constants import TMDB_API_KEY, tmdb_dataset_file
@@ -8,16 +10,52 @@ TMDB_BASE_URL = "https://api.themoviedb.org/3/movie/"
 IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
 
 
-def fetch_poster_url(movie_id):
+async def fetch_poster_url(session, movie_id):
     url = f"{TMDB_BASE_URL}{movie_id}?api_key={TMDB_API_KEY}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        return f"{IMAGE_BASE_URL}{data['poster_path']}" if data['poster_path'] else None
-    return None
+    async with session.get(url) as res:
+        data = await res.json()
+        return data.get('poster_path', None)
 
 
-def clean_and_insert_movies():
+async def insert_movies(df_chunk):
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+
+        for index, row in df_chunk.iterrows():
+            tmdb_id = row['id']
+            tasks.append(fetch_poster_url(session, tmdb_id))
+
+        poster_urls = await asyncio.gather(*tasks)
+
+        # Iterate through the dataset and fetch poster URLs
+        print("Adding movies...")
+        try:
+            movies = [Movie(
+                name=row.title,
+                synopsis=row.overview,
+                release_date=row.release_date,
+                runtime=row.runtime,
+                tmdb_id=row.id,
+                imdb_id=row.imdb_id,
+                image_url=poster_url if poster_url else None
+            )
+                for row, poster_url in zip(df_chunk.itertuples(), poster_urls)
+            ]
+
+            # Bulk insert
+            db.session.add_all(movies)
+            db.session.commit()
+
+        except Exception as e:
+            print(e)
+            db.session.rollback()
+
+
+def clean_insert_movies(chunk_size=1000):
+    if Movie.query.count() > 0:
+        print('Movies exist, aborting insert...')
+        return
+
     # Load CSV
     df = pd.read_csv(tmdb_dataset_file, on_bad_lines='skip', engine='python',
                      dtype='unicode')
@@ -26,39 +64,16 @@ def clean_and_insert_movies():
     df = df.drop(columns=['vote_count', 'status', 'revenue', 'backdrop_path', 'budget', 'homepage',
                           'original_title', 'poster_path', 'tagline', 'production_companies', 'production_countries',
                           'spoken_languages'])
+    df = df.head(50000)
     df.fillna('', inplace=True)
 
-    movies = []
-    count = 0
+    num_chunks = len(df) // chunk_size + 1
 
-    # Iterate through the dataset and fetch poster URLs
-    print("Adding movies...")
-    try:
-        for index, row in df.iterrows():
-            tmdb_id = row['id']
-            poster_url = fetch_poster_url(tmdb_id)
-            if poster_url:
-                # Look for movies with same tmdb id
-                movie = Movie.query.filter_by(tmdb_id=tmdb_id).first()
+    for i in range(num_chunks):
+        chunk = df[i * chunk_size:(i + 1) * chunk_size]
+        print(f"Processing chunk {i + 1}/{num_chunks}")
 
-                # Insert if not exists
-                if not movie:
-                    movie = Movie(
-                        name=row['title'],
-                        synopsis=row['overview'],
-                        release_date=row['release_date'],
-                        runtime=row['runtime'],
-                        tmdb_id=tmdb_id,
-                        imdb_id=row['imdb_id'],
-                        image_url=poster_url
-                    )
-                    movies.append(movie)
-                    count += 1
-                    print(f'Movies added: {count}/{len(df)}')
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(insert_movies(chunk))
 
-    except Exception as e:
-        db.session.rollback()
-
-    # Bulk insert
-    db.session.bulk_save_objects(movies)
-    db.session.commit()
+    print('Movies inserted')
