@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for, session
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session, current_app
+from sqlalchemy import text
 import config.constants
 from config.dbConnect import db
 from models.review import Review
@@ -9,30 +10,34 @@ reviews_bp = Blueprint('review', __name__, template_folder=config.constants.temp
 
 @reviews_bp.route('/api/add', methods=['POST'])
 def add():
-    new_review = Review(
-        body=request.form.get('review'),
-        rating=request.form.get('rating'),
-        movies_id=request.form.get('movie_id'),
-        users_id=session.get('user_id')
-    )
+    body=request.form.get('review')
+    rating=int(request.form.get('rating'))
+    movies_id=request.form.get('movie_id')
+    users_id=session.get('user_id')
 
-    try:
-        db.session.add(new_review)
-        db.session.commit()
-        flash('Review posted successfully!')
-        return redirect(url_for('movie.single', id=id))
+    with current_app.app_context():
+        try:
+            insertsql = text("INSERT INTO reviews (body, rating, movies_id, users_id) VALUES (:body, :rating, :movies_id, :users_id)")
+            db.session.execute(insertsql, {"body":body, "rating":rating, "movies_id":movies_id, "users_id":users_id})
+            db.session.commit()
+            flash('Review posted successfully!')
+            return redirect(url_for('movie.single', id=movies_id))
 
-    except Exception as e:
-        db.session_rollback()
-        flash("An error has occurred", "error")
-        return redirect(url_for('movie.single', id=id))
+        except Exception as e:
+            db.session.rollback()
+            flash("An error has occurred", "error")
+            return redirect(url_for('movie.single', id=movies_id))
 
 
 @reviews_bp.route('/edit/<int:id>', methods=['GET'])
 def edit(id):
-    review = Review.query.get(id)
-    if review is None:
-        flash('Review not found', 'error')
-        return redirect(url_for('index.index'))
+    with current_app.app_context():
+        sql=text("SELECT * FROM reviews WHERE id = :id")
+        result=db.session.execute(sql, {"id": id})
+        review=result.fetchone()
+        
+        if review is None:
+            flash('Review not found', 'error')
+            return redirect(url_for('index.index'))
 
-    return render_template('review/edit.html', review=review)
+        return render_template('review/edit.html', review=review)

@@ -1,5 +1,6 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for
+from flask import Blueprint, render_template, flash, request, redirect, current_app, url_for
 import config.constants
+from sqlalchemy import text
 from config.dbConnect import db
 from models.movie import Movie
 from models.review import Review
@@ -11,14 +12,20 @@ movies_bp = Blueprint('movie', __name__, template_folder=config.constants.templa
 
 @movies_bp.route('/single/<int:id>', methods=['GET'])
 def single(id):
-    movie = Movie.query.get(id)
-    reviews = Review.query.filter_by(movies_id=id)
+    with current_app.app_context():
+        sql=text("SELECT * FROM movies WHERE id = :id")
+        result=db.session.execute(sql, {"id": id})
+        movie=result.fetchone()
+        
+        review_sql = text("SELECT * FROM reviews WHERE movies_id = :movies_id")
+        result=db.session.execute(review_sql, {"movies_id": id})
+        reviews=result.fetchall()
 
-    if movie is None:
-        flash('Movie not found', 'error')
-        return redirect(url_for('index.index'))
-    
-    return render_template('movie/single.html', movie=movie, reviews=reviews)
+        if movie is None:
+            flash('Movie not found', 'error')
+            return redirect(url_for('index.index'))
+        
+        return render_template('movie/single.html', movie=movie, reviews=reviews)
 
 
 # Api to update movies, won't render any page
@@ -26,34 +33,41 @@ def single(id):
 def post_update_movie():
     rq = request.form
     id = rq.get('movie_id')
-    langs = rq.getlist('langs[]')
+    # langs = rq.getlist('langs[]')
 
-    movie = Movie.query.get(id)
+    with current_app.app_context():
+        sql=text("SELECT * FROM movies WHERE id = :id")
+        result=db.session.execute(sql, {"id": id})
+        movie=result.fetchone()
 
-    if movie:
-        movie.name = rq.get('moviename')
-        movie.synopsis = rq.get('synopsis')
-        movie.price = rq.get('price')
-        movie.runtime = rq.get('runtime')
-        movie.release_date = rq.get('release_date')
-        movie.trailer_link = rq.get("trailer_link")
+        if movie:
+            sql=text("UPDATE movies SET name=:name, synopsis=:synopsis, price=:price, runtime=:runtime, release_date=:release_date")
+            name = rq.get('moviename')
+            synopsis = rq.get('synopsis')
+            price = rq.get('price')
+            runtime = rq.get('runtime')
+            release_date = rq.get('release_date')
+            # movie.trailer_link = rq.get("trailer_link")
 
-        db.session.commit()
+            db.session.execute(sql, {"name":name, "synopsis":synopsis, "price":price, "runtime":runtime, "release_date":release_date})
+            db.session.commit()
 
-        return redirect(url_for(''))
+            return redirect(url_for('movie.single', id=id))
+        else:
+            flash('Movie not found', 'error')
+            return redirect(url_for('index.index'))
 
-    flash('Movie not found', 'error')
-    return redirect(url_for('index.index'))
-
-
+   
 @movies_bp.route('/update/<int:id>')
 def update_movie(id):
-    movie = Movie.query.get(id)
-    
-    printed_langs = []
-    if movie is None:
-        flash('Movie not found', 'error')
-        return redirect(url_for('index.index'))
+    with current_app.app_context():
+        sql=text("SELECT * FROM movies WHERE id = :id")
+        result=db.session.execute(sql, {"id": id})
+        movie=result.fetchone()
 
-    return render_template('movie/update.html', movie=movie)
+        if movie is None:
+            flash('Movie not found', 'error')
+            return redirect(url_for('index.index'))
+
+        return render_template('movie/update.html', movie=movie)
 

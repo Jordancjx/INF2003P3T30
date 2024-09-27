@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash
+from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash, current_app
+from sqlalchemy import text
 import config.constants
 from config.dbConnect import db
 from models.user import User
@@ -45,7 +46,14 @@ def getProfile():
         flash("Please log in to view your profile.", "error")
         return redirect(url_for('user.login'))
 
-    user = User.query.get_or_404(session['user_id'])
+    with current_app.app_context():
+        sql=text("SELECT * FROM users WHERE id = :id")
+        result=db.session.execute(sql, {"id": session['user_id']})
+        user=result.fetchone()
+        
+        if user is None:
+            flash("User not found.", "error")
+            return redirect(url_for('user.login'))
 
     return render_template('/user/profile.html', user=user)
 
@@ -54,32 +62,35 @@ def getProfile():
 @user_bp.route('/api/register', methods=["POST"])
 def register_process():
     hashed_password = generate_password_hash(request.form.get('password'), method='pbkdf2:sha256', salt_length=16)
-
-    existing_user = User.query.filter((User.username == request.form.get('username')) |
-                                      (User.email == request.form.get('email'))).first()
-
-    if existing_user:
-        flash("Username or Email already exists", "error")
+    username=request.form.get('username')
+    fname=request.form.get('fname')
+    lname=request.form.get('lname')
+    email=request.form.get('email')
+    
+    if not all([username, fname, lname, email, hashed_password]):
+        flash("Not all fields are filled", "error")
         return redirect(url_for('user.register'))
+    
+    with current_app.app_context():
+        sql=text("SELECT * FROM users WHERE username = :username OR email = :email")
+        result=db.session.execute(sql, {"username":username, "email":email})
+        existing_user=result.fetchone()
+    
+        if existing_user:
+            flash("Username or Email already exists", "error")
+            return redirect(url_for('user.register'))
+        
+        insert=text("INSERT INTO users (username, fname, lname, email, password, email_validated, admin_controls) VALUES (:username, :fname, :lname, :email, :password, :email_validated, :admin_controls)")
 
-    new_user = User(
-        username=request.form.get('username'),
-        fname=request.form.get('fname'),
-        lname=request.form.get('lname'),
-        email=request.form.get('email'),
-        password=hashed_password,
-        # profile_pic_url = data.get('profile_pic_url', None),
-    )
-
-    try:
-        db.session.add(new_user)
-        db.session.commit()
-        flash('Registered successfully!')
-        return redirect(url_for('user.login'))
-    except Exception as e:
-        db.session_rollback()
-        flash("An error has occurred", "error")
-        return redirect(url_for('user.register'))
+        try:
+            db.session.execute(insert, {"username": username, "fname":fname, "lname":lname, "email":email, "password":hashed_password, "email_validated":False, "admin_controls":False})
+            db.session.commit()
+            flash('Registered successfully!')
+            return redirect(url_for('user.login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('An error has occurred during registration.', "error")
+            return redirect(url_for('user.register'))
 
 
 # Login API; Does not render any page
@@ -88,6 +99,11 @@ def login_process():
     identifier = request.form.get('username')  # This could be either email or username
     password = request.form.get('password')
 
+    with current_app.app_context():
+        sql=text("SELECT * FROM users WHERE username = :identifier OR email = :identifier LIMIT 1")
+        result=db.session.execute(sql, {"identifier":identifier})
+        user=result.fetchone()
+    
     user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
     if user and check_password_hash(user.password, password):
         if user.admin_controls == True:
@@ -105,27 +121,53 @@ def update_profile():
         flash("Please log in to update your profile.", "error")
         return redirect(url_for('user.login'))
 
-    user = User.query.get_or_404(session['user_id'])
-    user.fname = request.form.get('fname')
-    user.lname = request.form.get('lname')
-    user.email = request.form.get('email')
-
-    # Update password if provided
+    user_id = session["user_id"]
+    fname = request.form.get('fname')
+    lname = request.form.get('lname')
+    email = request.form.get('email')
     password = request.form.get('password')
-    if password:
-        user.password = generate_password_hash(password)
-
+    
+    profile_pic_url = None
     if 'profile_pic' in request.files:
         file = request.files['profile_pic']
-
         if file.filename != '':
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(UPLOAD_FOLDER, filename)
                 file.save(file_path)
+                profile_pic_url = f"/{file_path}"
 
-                user.profile_pic_url = f"/{file_path}"
+    with current_app.app_context():
+        try:
+            params = {
+                "fname": fname,
+                "lname": lname,
+                "email": email,
+                "user_id": user_id
+            }
+            
+            updatesql = "UPDATE users SET fname = :fname, lname = :lname, email = :email"
+            
+            if profile_pic_url:
+                updatesql += ", profile_pic_url = :profile_pic_url"
+                params["profile_pic_url"] = profile_pic_url
+                
+            if password:
+                hashed_password = generate_password_hash(password)
+                updatesql += ", password = :password"
+                params["password"] = hashed_password
+                
+            updatesql += " WHERE id = :user_id"
+            
+            db.session.execute(text(updatesql), params)
+            db.session.commit()
 
-    db.session.commit()
-    flash("Profile updated successfully!", "success")
-    return redirect(url_for('user.getProfile'))
+            flash("Profile updated successfully!", "success")
+            return redirect(url_for('user.getProfile'))
+        
+        except Exception as e:
+            db.session.rollback()
+            print(e)
+            flash("An error occurred while updating the profile", "error")
+            return redirect(url_for('user.getProfile'))
+    
