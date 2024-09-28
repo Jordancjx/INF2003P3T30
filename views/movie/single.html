@@ -91,6 +91,7 @@
                 <h1 class="display-6"><strong>Reviews</strong></h1>
             </div>
 
+                {% if 'user_id' in session%}
                 <div class="full-width mb-3">
                     <p><strong>Add review</strong></p>
                     <form method="post" action="/review/api/add" class="form-group review-form" style="width: 40%">
@@ -108,7 +109,8 @@
                             rows="3"></textarea>
                         <button type="submit" class="btn btn-primary">Add Review</button>
                     </form>
-                </div>
+                    </div>
+                    {% endif %}
                 <div data-scroll class="mt-5 container full-width d-flex flex-wrap flex-row p-0">
                 {%for review in reviews %}
                 <div class="col-xl-4 col-l-4 col-s-12 col-12 col-md-6 p-0">

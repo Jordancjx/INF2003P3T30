@@ -10,9 +10,14 @@ index_bp = Blueprint('index', __name__, template_folder=config.constants.templat
 
 @index_bp.route('/')
 def index():
+    searchName = request.args.get("searchName")
     with current_app.app_context():
-        sql = text("SELECT * FROM movies LIMIT 10")
-        result = db.session.execute(sql)
+        if searchName:
+            sql = text("SELECT * FROM movies WHERE name=:name")
+            result = db.session.execute(sql, {"name":searchName})
+        else:
+            sql = text("SELECT * FROM movies LIMIT 10")
+            result = db.session.execute(sql)
         movies = result.fetchall()
 
     return render_template('index.html', movies=movies)

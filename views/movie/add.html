@@ -1,0 +1,50 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+
+<section data-scroll-section class="container pt-5">
+    <h1>Add Movie</h1>
+    <form action="/movie/api/add" method="POST" enctype="multipart/form-data">
+        <div class="form-group mt-3">
+            <label for="exampleFormControlInput1">Movie Name</label>
+            <input type="text" name="moviename" class="form-control"
+                placeholder="Movie Name">
+        </div>
+        <div class="form-group mt-3">
+            <label for="exampleFormControlInput1">Trailer link</label>
+            <input type="text" class="form-control" name="trailerlink"
+                placeholder="Trailer Link">
+        </div>
+        <div class="form-group mt-3">
+            <label for="exampleFormControlInput1">Runtime</label>
+            <input type="number" class="form-control" name="runtime"
+                placeholder="Runtime">
+        </div>
+        <div class="form-group mt-3">
+            <label for="exampleFormControlInput1">Price</label>
+            <input type="number" class="form-control" name="price"
+                placeholder="Price">
+        </div>
+        <div class="form-group mt-3">
+            <label for="exampleFormControlInput1">Movie Poster</label>
+            <input type="file" name="image_file" id="fileToUpload">
+        </div>
+
+        <div class="form-group mt-3">
+            <label for="exampleFormControlInput1">Date of release</label>
+            <input type="date" name="release_date" class="form-control"
+                placeholder="Release Date">
+        </div>
+        
+        <div class="form-group mt-3">
+            <label for="exampleFormControlTextarea1">Synopsis</label>
+            <textarea name="synopsis" class="form-control"
+                rows="3"></textarea>
+        </div>
+        <div class="form-group mt-3">
+            <button type="submit" class="btn btn-primary">Add Movie</button>
+        </div>
+    </form>
+</section>
+
+
+{% endblock %}
