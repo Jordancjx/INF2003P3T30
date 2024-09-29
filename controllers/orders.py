@@ -2,7 +2,6 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from sqlalchemy import text
 from config.dbConnect import db
 from datetime import datetime
-
 from models.order import Order
 
 orders_bp = Blueprint('orders', __name__, url_prefix='/orders')
@@ -43,10 +42,10 @@ def post_add_order():
             db.session.commit()
 
             flash('Movie added to cart successfully.', 'success')
-            return redirect(url_for('index.index'))
+            return redirect(request.referrer)
         else:
             flash('Movie not found.', 'error')
-            return redirect(url_for('index.index'))
+            return redirect(request.referrer)
 
 
 @orders_bp.route('/api/remove', methods=['POST'])
