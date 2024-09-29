@@ -8,6 +8,7 @@ from controllers.admin import admin_bp
 from controllers.user import user_bp
 from controllers.review import reviews_bp
 from controllers.orders import orders_bp
+from controllers.purchases import purchases_bp
 from utilities.movie import clean_insert_movies
 
 import config.constants
@@ -30,11 +31,13 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(reviews_bp)
 app.register_blueprint(orders_bp)
+app.register_blueprint(purchases_bp)
 
 from models.movie import Movie
 from models.user import User
 from models.review import Review
 from models.order import Order
+from models.purchases import Purchases, History
 
 with app.app_context():
     # ABSOLUTELY DO NOT UNCOMMENT, TESTING PURPOSES ONLY

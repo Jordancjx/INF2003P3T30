@@ -1,0 +1,26 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+
+<div class="container mt-5">
+    <h2>Order History</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Movie Name</th>
+                <th>Price</th>
+                <th>Purchase Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for history, purchase_timestamp in history_items %}
+            <tr>
+                <td>{{ history.movie_name }}</td>
+                <td>${{ history.price }}</td>
+                <td>{{ purchase_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

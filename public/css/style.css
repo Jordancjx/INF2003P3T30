@@ -4,6 +4,10 @@
     font-family: "Lato", sans-serif;
     box-sizing: border-box;
   }
+
+  .navbar {
+    z-index: 1050; /* Higher than other page elements */
+}
   
   /** Scrolling stuff, just ignore **/
   

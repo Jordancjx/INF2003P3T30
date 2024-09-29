@@ -88,8 +88,6 @@ def cart():
         return render_template('/user/cart.html', orders=orders, total_sum=total_sum)
 
 
-
-
 # Register API; Does not render any page
 @user_bp.route('/api/register', methods=["POST"])
 def register_process():

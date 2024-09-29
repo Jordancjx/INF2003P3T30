@@ -38,10 +38,12 @@
     <!-- Total Price and Proceed to Payment Button -->
     <div class="w-75 mt-3 d-flex align-items-center">
         <h4 class="me-3">Total Price: ${{ total_sum }}</h4>
-        <form action="/payment" method="post">
+        <form action="/purchases/api/payment" method="get">
+            <input type="hidden" name="total_sum" value="{{ total_sum }}">
             <button type="submit" class="btn btn-primary">Proceed to Payment</button>
         </form>
     </div>
+    
     
     {% else %}
     <div class="w-75">

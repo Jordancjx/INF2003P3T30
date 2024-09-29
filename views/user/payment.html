@@ -1,0 +1,41 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+<section class="container pt-5">
+    <h2>Payment</h2>
+    <form action="/purchases/api/payment" method="post">
+        <input type="hidden" name="total_sum" value="{{ total_sum }}">
+
+        <!-- Card Number -->
+        <div class="mb-3">
+            <label for="card_number">Card Number</label>
+            <input type="text" id="card_number" name="card_number" class="form-control" placeholder="Enter card number" required>
+        </div>
+
+        <!-- Expiry Date -->
+        <div class="mb-3">
+            <label for="expiry_date">Expiry Date</label>
+            <input type="text" id="expiry_date" name="expiry_date" class="form-control" placeholder="MM/YY" required>
+        </div>
+
+        <!-- Full Name -->
+        <div class="mb-3">
+            <label for="full_name">Full Name</label>
+            <input type="text" id="full_name" name="full_name" class="form-control" placeholder="Name on card" required>
+        </div>
+
+        <!-- Card PIN -->
+        <div class="mb-3">
+            <label for="card_pin">Card PIN</label>
+            <input type="password" id="card_pin" name="card_pin" class="form-control" placeholder="Enter card PIN" required>
+        </div>
+
+        <!-- Total Amount -->
+        <div class="mb-3">
+            <h4>Total Amount: ${{ total_sum }}</h4>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary">Submit Payment</button>
+    </form>
+</section>
+{% endblock %}
