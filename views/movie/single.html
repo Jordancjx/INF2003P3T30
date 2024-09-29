@@ -58,10 +58,30 @@
                         <div>
                             <h3>
                                 {{movie.release_date}}
+                                {{movie.price}}
+                            </h3>
+                        </div>
+                        <h2><strong>Price</strong></h2>
+                        <div>
+                            <h3>
+                                $ {{movie.price}}
                             </h3>
                         </div>
                     </div>
+
+                    <div >
+                        <!-- Add to cart -->
+                        <form action="/orders/api/add" method="POST" class="form-group">
+                            <input type="hidden" name="movie_id" value="{{ movie.id }}">
+                            <button type="submit" class="btn btn-primary">
+                                Add to Cart
+                            </button>
+                        </form>
+                    </div>
+
                 </div>
+
+
 
                 <div class="genres mt-5 d-flex justify-content-between">
                     <div>
@@ -78,6 +98,10 @@
                         </h3>
                     </div>
                 </div>
+
+
+
+                
             </div>
             <div class="col-xl-6 col-lg-6 col-12 d-flex flex-column">
                 <div class="movie-image d-flex justify-content-end align-items-center">

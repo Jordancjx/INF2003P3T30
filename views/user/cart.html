@@ -1,0 +1,54 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+
+<section style="min-height:51vh;" class="container d-flex flex-column justify-content-center align-items-center pt-5" data-scroll-section>
+    <div class="w-75 mb-2">
+        <h2>Your Cart</h2>
+    </div>
+
+    <!-- Check if there are orders -->
+    {% if orders %}
+    <div class="w-75">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Movie Name</th>
+                    <th>Price</th>
+                    <th>Action</th> <!-- Add a new column for the remove button -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.name }}</td> <!-- Display the movie name -->
+                    <td>${{ order.total_price }}</td> <!-- Display the price -->
+                    <td>
+                        <!-- Remove Button -->
+                        <form action="/orders/api/remove" method="post">
+                            <input type="hidden" name="order_id" value="{{ order.id }}">
+                            <button type="submit" class="btn btn-danger">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Total Price and Proceed to Payment Button -->
+    <div class="w-75 mt-3 d-flex align-items-center">
+        <h4 class="me-3">Total Price: ${{ total_sum }}</h4>
+        <form action="/payment" method="post">
+            <button type="submit" class="btn btn-primary">Proceed to Payment</button>
+        </form>
+    </div>
+    
+    {% else %}
+    <div class="w-75">
+        <p>Your cart is empty.</p>
+    </div>
+    {% endif %}
+</section>
+
+{% endblock %}
+

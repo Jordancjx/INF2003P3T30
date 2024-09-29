@@ -59,6 +59,37 @@ def getProfile():
     return render_template('/user/profile.html', user=user)
 
 
+# cart
+@user_bp.route('/cart')
+def cart():
+    # Check if user is logged in
+    if 'user_id' not in session:
+        flash("Please log in to view your cart.", "error")
+        return redirect(url_for('user.login'))
+
+    user_id = session['user_id']
+    with current_app.app_context():
+        # Fetch the user's orders and join with the movies table to get movie names
+        sql = text("""
+            SELECT orders.id, orders.order_timestamp, orders.total_price, movies.name 
+            FROM orders 
+            JOIN movies ON orders.movie_id = movies.id 
+            WHERE orders.users_id = :user_id
+        """)
+        result = db.session.execute(sql, {"user_id": user_id})
+        orders = result.fetchall()
+
+        # Calculate the total sum of prices
+        total_sum_sql = text("SELECT COALESCE(SUM(total_price), 0) as total_sum FROM orders WHERE users_id = :user_id")
+        total_sum_result = db.session.execute(total_sum_sql, {"user_id": user_id})
+        total_sum = total_sum_result.fetchone().total_sum
+
+        # Pass the fetched data to the cart template
+        return render_template('/user/cart.html', orders=orders, total_sum=total_sum)
+
+
+
+
 # Register API; Does not render any page
 @user_bp.route('/api/register', methods=["POST"])
 def register_process():

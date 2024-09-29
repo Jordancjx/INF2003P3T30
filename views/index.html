@@ -114,6 +114,19 @@
                                     {{movie.price}}
                                 </p>
                             </div>
+
+                            <div class="row">
+                                <div class="col text-end">
+                                    <!-- Create a form that submits to the addorders route -->
+                                    <form action="/orders/api/add" method="POST">
+                                        <input type="hidden" name="movie_id" value="{{ movie.id }}">
+                                        <button type="submit" class="btn btn-success" style="background-color: #FFD700;">
+                                            Add to Cart
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>

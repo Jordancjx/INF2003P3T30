@@ -39,6 +39,13 @@
                     <a class="btn btn-md btn-info text-white" href="/user/profile"><i class="fas fa-id-card mr-1"></i> Profile</a>
                 </li>
                 {% endif %}
+
+                {%if 'user_id' in session %}
+                <li class="nav-item ms-4">
+                    <a class="nav-link text-white" href="/user/cart">Cart</a>
+                </li>
+                {%endif%}
+
                 {%if 'admin' in session %}
                 <li class="nav-item ms-4">
                     <a class="nav-link text-white" href="/admin">Admin Dashboard</a>
