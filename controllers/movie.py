@@ -32,17 +32,16 @@ def search():
 @movies_bp.route('/single/<int:id>', methods=['GET'])
 def single(id):
     with current_app.app_context():
-        sql = text("SELECT * FROM movies WHERE id = :id")
+        sql = text("SELECT * FROM movies LEFT JOIN reviews ON movies.id = reviews.movies_id LEFT JOIN users ON reviews.users_id = users.id WHERE movies.id = :id")
         result = db.session.execute(sql, {"id": id})
-        movie = result.fetchone()
+        rows = result.fetchall()
 
-        if movie is None:
+        if not rows:
             flash('Movie not found', 'error')
             return redirect(url_for('index.index'))
-
-        review_sql = text("SELECT * FROM reviews WHERE movies_id = :movies_id")
-        result = db.session.execute(review_sql, {"movies_id": id})
-        reviews = result.fetchall()
+        
+        movie = rows[0]
+        reviews = [row for row in rows if row.id]
 
         return render_template('movie/single.html', movie=movie, reviews=reviews)
 

@@ -90,12 +90,11 @@
             <div class="full-width">
                 <h1 class="display-6"><strong>Reviews</strong></h1>
             </div>
-
                 {% if 'user_id' in session%}
                 <div class="full-width mb-3">
                     <p><strong>Add review</strong></p>
                     <form method="post" action="/review/api/add" class="form-group review-form" style="width: 40%">
-                        <input type="hidden" name="movie_id" value="{{movie.id}}">
+                        <input type="hidden" name="movie_id" value="{{movie[0]}}">
                         <label for="rating">Select a rating:</label>
                         <select name="rating" class="form-select mb-2" aria-label="rating">
                             <option value="5">5/5</option>
@@ -125,7 +124,7 @@
                                 {{review.body}}
                             </p>
                             <p class="card-title">Written by:
-                                {{review.users_id}}
+                                {{review.username}}
                             </p>
 
 

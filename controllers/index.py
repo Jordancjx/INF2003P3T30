@@ -11,13 +11,47 @@ index_bp = Blueprint('index', __name__, template_folder=config.constants.templat
 @index_bp.route('/')
 def index():
     searchName = request.args.get("searchName")
+    page = request.args.get('page', default=1, type=int)  # Defaults to page 1 if not provided
+    per_page = request.args.get('per_page', default=12, type=int)  # Defaults to 10 items per page if not provided
+    
     with current_app.app_context():
         if searchName:
-            sql = text("SELECT * FROM movies WHERE name=:name")
-            result = db.session.execute(sql, {"name":searchName})
+            total_sql = text("SELECT COUNT(*) FROM movies WHERE name LIKE :name")
+            total_result = db.session.execute(total_sql, {"name": f"%{searchName}%"})
+            total_movies = total_result.scalar()  # Get the total number of movies
+            
+            sql = text("""
+                SELECT * FROM movies 
+                WHERE name LIKE :name
+                LIMIT :limit OFFSET :offset
+            """)
+            result = db.session.execute(sql, {
+                "name": f"%{searchName}%",
+                "limit": per_page,
+                "offset": (page - 1) * per_page
+            })
         else:
-            sql = text("SELECT * FROM movies LIMIT 10")
-            result = db.session.execute(sql)
+            # Count total movies (for pagination)
+            total_sql = text("SELECT COUNT(*) FROM movies")
+            total_result = db.session.execute(total_sql)
+            total_movies = total_result.scalar()  # Get the total number of movies
+            sql = text("""
+                SELECT * FROM movies 
+                LIMIT :limit OFFSET :offset
+            """)
+            result = db.session.execute(sql, {
+                "limit": per_page,
+                "offset": (page - 1) * per_page  # Calculate the offset based on page number
+            })
+            
         movies = result.fetchall()
+        
+        total_pages = (total_movies + per_page - 1) // per_page  # Total pages logic
+        display_range = range(max(1, page - 14), min(total_pages + 1, page + 15))
 
-    return render_template('index.html', movies=movies)
+    return render_template('index.html', 
+                           movies=movies, 
+                           page=page, 
+                           per_page=per_page, 
+                           total_pages=total_pages,
+                           display_range=display_range)
