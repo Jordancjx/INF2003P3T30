@@ -25,7 +25,6 @@ def payment():
     # Render the payment form
     return render_template('/user/payment.html', total_sum=total_sum)
 
-# Process payment
 @purchases_bp.route('/api/payment', methods=['POST'])
 def process_payment():
     # Check if user is logged in
@@ -38,10 +37,14 @@ def process_payment():
     expiry_date = request.form.get('expiry_date')
     full_name = request.form.get('full_name')
     card_pin = request.form.get('card_pin')
-    total_sum = request.form.get('total_sum')
 
     with current_app.app_context():
         try:
+            # Calculate total_sum based on the user's cart items
+            total_sum = db.session.query(db.func.sum(Order.total_price)).filter_by(users_id=user_id).scalar()
+            if total_sum is None:
+                total_sum = 0  # Set to 0 if there are no items in the cart
+
             # Insert the payment into the purchases table
             new_purchase = Purchases(
                 card_number=card_number,
@@ -77,7 +80,7 @@ def process_payment():
             db.session.commit()
 
             flash('Payment processed successfully.', 'success')
-            return redirect(request.referrer)
+            return redirect(url_for('purchases.view_history'))
         except Exception as e:
             db.session.rollback()
             flash('An error occurred during the payment process.', 'error')
