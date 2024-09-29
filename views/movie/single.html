@@ -108,6 +108,7 @@
                         <textarea name="review" aria-label="review" required class="form-control mb-2"
                             rows="3"></textarea>
                         <button type="submit" class="btn btn-primary">Add Review</button>
+        
                     </form>
                     </div>
                     {% endif %}
@@ -119,12 +120,25 @@
                             {%for i in range(1, review.rating + 1) %}
                                 <img style="width:20px; height: 20px;" class="mb-1" src="{{url_for('static', filename='/img/star.png') }}" alt="star">
                             {%endfor%}
+
                             <p class="card-text">
                                 {{review.body}}
                             </p>
                             <p class="card-title">Written by:
-                                {{review.user_id}}
+                                {{review.users_id}}
                             </p>
+
+
+                             <!-- Add Edit Button -->
+                            {% if review.users_id == session.get('user_id') %}
+                                <a href="{{ url_for('review.edit', id=review.id) }}" class="btn btn-primary mt-2 ">Edit Review</a>
+
+                                <!-- Delete Form -->
+                                <form action="{{ url_for('review.delete', id=review.id) }}" method="POST" style="display:inline;">
+                                    <input type="hidden" name="movie_id" value="{{ movie.id }}">
+                                    <button type="submit" class="btn btn-danger mt-2" onclick="return confirm('Are you sure you want to delete this review?');">Delete Review</button>
+                                </form>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

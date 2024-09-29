@@ -1,0 +1,23 @@
+{% extends "layouts/base.html" %}
+
+{% block body %}
+<section>
+    <h1>Edit Your Review</h1>
+    <form method="POST" action="{{ url_for('review.update', id=review.id) }}">
+        <input type="hidden" name="movie_id" value="{{ review.movies_id }}">
+
+        <label for="rating">Select a rating:</label>
+        <select name="rating" class="form-select mb-2" aria-label="rating">
+            <option value="5" {% if review.rating == 5 %}selected{% endif %}>5/5</option>
+            <option value="4" {% if review.rating == 4 %}selected{% endif %}>4/5</option>
+            <option value="3" {% if review.rating == 3 %}selected{% endif %}>3/5</option>
+            <option value="2" {% if review.rating == 2 %}selected{% endif %}>2/5</option>
+            <option value="1" {% if review.rating == 1 %}selected{% endif %}>1/5</option>
+        </select>
+
+        <label for="review">Review:</label>
+        <textarea name="review" aria-label="review" required class="form-control mb-2" rows="3">{{ review.body }}</textarea>
+        <button type="submit" class="btn btn-primary">Update Review</button>
+    </form>
+</section>
+{% endblock %}
