@@ -15,9 +15,9 @@
                 {% for movie in top_movies %}
                 <div class="carousel-item {% if loop.index == 1 %}active{% endif %}">
                     <div class="d-flex justify-content-center">
-                        <img src="{{ movie.image_url}}" class="d-block w-50" alt="{{ movie.name }}">
+                        <img src="{{ movie.image_url}}" class="d-block w-50" alt="{{ movie.name }}" style="max-width: 30%";>
                     </div>
-                    <div class="carousel-caption d-none d-md-block">
+                    <div class="carousel-caption d-none d-md-block " style="font-size:large;">
                         <h5>{{ movie.name }}</h5>
                         <p>Rating: {{ movie.avg_rating | round(2)}}</p>
                     </div>
