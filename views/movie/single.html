@@ -54,52 +54,61 @@
                         </div>
                     </div> -->
                     <div>
-                        <h2><strong>RELEASED</strong></h2>
+                        <h3><strong>RELEASED</strong></h3>
                         <div>
-                            <h3>
+                            <h5>
                                 {{movie.release_date}}
 
-                            </h3>
-                        </div>
-                        <h2><strong>Price</strong></h2>
-                        <div>
-                            <h3>
-                                $ {{movie.price}}
-                            </h3>
+                            </h5>
                         </div>
                     </div>
-
-                    <div >
-                        <!-- Add to cart -->
-                        <form action="/orders/api/add" method="POST" class="form-group">
-                            <input type="hidden" name="movie_id" value="{{movie[0]}}">
-                            <button type="submit" class="btn btn-primary">
-                                Add to Cart
-                            </button>
-                        </form>
+                    <div>
+                        <h3><strong>Run Time</strong></h3>
+                        <h5>
+                            {{movie.runtime}} Minutes
+                        </h5>
                     </div>
                 </div>
 
                 <div class="genres mt-5 d-flex justify-content-between">
                     <div>
-                        <h2><strong>GENRES</strong></h2>
-                        <h3>
-                            {{movie.genres}}
-                        </h3>
+                        <h3><strong>GENRES</strong></h3>
+                        <h5>
+                            {{movie.genre}}
+                        </h5>
                     </div>
                     <div>
-                        <h2><strong>Run Time</strong></h2>
-                        <h3>
-                            {{movie.runtime}} Minutes
-                        </h3>
+                        <h3><strong>LANGUAGES</strong></h3>
+                        <div>
+                            <h5>
+                                {{movie.language}}
+                            </h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5">
+                    <h3><strong>Price</strong></h3>
+                    <div>
+                        <h5>
+                            $ {{movie.price}}
+                        </h5>
                     </div>
                 </div>
                 
             </div>
             <div class="col-xl-6 col-lg-6 col-12 d-flex flex-column">
                 <div class="movie-image d-flex justify-content-end align-items-center">
-                    <img class="w-75" src="https://image.tmdb.org/t/p/w500{{movie.image_url}}" alt="{{movie.name}}">
+                    <img class="w-75" src="{{movie.image_url}}" alt="{{movie.name}}" loading="lazy">
                 </div>
+            </div>
+            <div class="mt-4">
+                <!-- Add to cart -->
+                <form action="/orders/api/add" method="POST" class="form-group">
+                    <input type="hidden" name="movie_id" value="{{movie[0]}}">
+                    <button type="submit" class="btn btn-lg w-100 btn-primary">
+                        Add to Cart
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -109,7 +118,7 @@
             </div>
                 {% if 'user_id' in session%}
                 <div class="full-width mb-3">
-                    <p><strong>Add review</strong></p>
+                    <h5><strong>Add a review</strong></h5>
                     <form method="post" action="/review/api/add" class="form-group review-form" style="width: 40%">
                         <input type="hidden" name="movie_id" value="{{movie[0]}}">
                         <label for="rating">Select a rating:</label>
@@ -123,7 +132,7 @@
                         <label for="review">Review:</label>
                         <textarea name="review" aria-label="review" required class="form-control mb-2"
                             rows="3"></textarea>
-                        <button type="submit" class="btn btn-primary">Add Review</button>
+                        <button type="submit" class="btn btn-success">Add Review</button>
         
                     </form>
                     </div>

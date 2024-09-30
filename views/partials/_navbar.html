@@ -12,7 +12,8 @@
         <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item ms-4">
-                    <a class="nav-link text-white rounded" href="/">Movies</a>
+                    <a class="nav-link text-white rounded" href="/">
+                        <i class="fas fa-film mr-2"></i> Movies</a>
                 </li>
 
                 <li class="nav-item ms-4">
@@ -35,8 +36,12 @@
                 </li>
 
                 {% if 'user_id' in session %}
+                <li class="nav-item ms-4">
+                    <a class="nav-link text-white" href="/user/cart">
+                        <i class="fas fa-shopping-cart mr-2"></i> Cart</a>
+                </li>
                 <li class="nav-item dropdown ms-4 position-relative">
-                    <a class="btn btn-md btn-info text-white dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="btn text-white dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-id-card mr-1"></i> Profile
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="profileDropdown" style="z-index: 1050;">
@@ -46,13 +51,6 @@
                 </li>
                 
             {% endif %}
-            
-
-                {%if 'user_id' in session %}
-                <li class="nav-item ms-4">
-                    <a class="nav-link text-white" href="/user/cart">Cart</a>
-                </li>
-                {%endif%}
 
                 {%if 'admin' in session %}
                 <li class="nav-item ms-4">
@@ -62,7 +60,8 @@
                 {% if 'user_id' in session %}
 
                 <li class="nav-item ms-4">
-                    <a class="btn btn-danger" href="/user/logout">Logout</a>
+                    <a class="btn btn-danger" href="/user/logout">
+                        <i class="fas fa-power-off mr-2"></i> Logout</a>
                 </li>
                 {%else%}
                 <li class="nav-item ms-4">

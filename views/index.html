@@ -53,8 +53,8 @@
 
     <section id="movieSection" data-scroll class="container d-flex p-2 flex-wrap">
         {% for movie in movies %}
-            <div class="col-xl-4 col-l-4 col-sm-12 col-12 col-md-6 p-1 mb-4">
-                <div class="card item-card h-100">
+            <div class="col-xl-4 col-l-4 col-sm-12 col-12 col-md-6 p-1 mb-4 d-flex align-items-stretch mt-4">
+                <div class="card w-100">
                     {% if 'user_id' in session and 'admin' in session %}
                     <div class="dropdown">
                         <button class="btn btn-info dropdown-toggle text-white w-100" type="button" data-bs-toggle="dropdown">
@@ -76,9 +76,9 @@
                     </div>
                     {%endif%}
                     <div class="view overlay border-bottom">
-                        <img class="card-img-top" src="{{movie.image_url}}" alt="{{movie.name}}">
+                        <img class="card-img-top" src="{{movie.image_url}}" alt="{{movie.name}}" loading="lazy">
                     </div>
-                    <div class="card-body d-flex flex-column justify-content-between">
+                    <div class="card-body d-flex flex-column">
                         <div>
                             <h2 class="card-title">
                                 {{ movie.name }}
@@ -131,33 +131,27 @@
 <!--                                {%endfor%}-->
                                 </div>
                             </div>
-
-                            <div class="row">
-                                <div class="col text-end">
-                                    <a href="/movie/single/{{movie.id}}" class="btn" style="background-color: #FFD700;">
-                                    View movie details</a>
-                                </div>
-                            </div>
-
-                            <div class="card-footer text-center mt-2">
-                                <p class="m-0">$
-                                    {{movie.price}}
-                                </p>
-                            </div>
-
-                            <div class="row">
-                                <div class="col text-end">
-                                    <!-- Create a form that submits to the addorders route -->
-                                    <form action="/orders/api/add" method="POST">
-                                        <input type="hidden" name="movie_id" value="{{ movie.id }}">
-                                        <button type="submit" class="btn btn-success" style="background-color: #FFD700;">
-                                            Add to Cart
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-
                         </div>
+                    </div>
+                    <div class="row m-2">
+                        <div class="col text-start">
+                            <!-- Create a form that submits to the addorders route -->
+                            <form action="/orders/api/add" method="POST">
+                                <input type="hidden" name="movie_id" value="{{ movie.id }}">
+                                <button type="submit" class="btn" style="background-color: #FFD700;">
+                                    Add to Cart
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col text-end">
+                            <a href="/movie/single/{{movie.id}}" class="btn" style="background-color: #FFD700;">
+                            View movie details</a>
+                        </div>
+                    </div>
+                    <div class="card-footer text-center mt-2">
+                        <h5 class="m-0">$
+                            {{movie.price}}
+                        </h5>
                     </div>
                 </div>
             </div>
