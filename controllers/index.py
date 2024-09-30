@@ -49,9 +49,23 @@ def index():
         total_pages = (total_movies + per_page - 1) // per_page  # Total pages logic
         display_range = range(max(1, page - 14), min(total_pages + 1, page + 15))
 
+    # Fetch top-rated movies for the carousel
+    with current_app.app_context():
+        top_rated_sql = text("""
+            SELECT m.name as name, m.image_url as image_url, COALESCE(AVG(r.rating), 0) as avg_rating
+            FROM movies m
+            LEFT JOIN reviews r ON m.id = r.movies_id
+            GROUP BY m.id
+            ORDER BY avg_rating DESC
+            LIMIT 5;
+        """)
+        top_rated_result = db.session.execute(top_rated_sql)
+        top_movies = top_rated_result.fetchall()
+
     return render_template('index.html', 
                            movies=movies, 
                            page=page, 
                            per_page=per_page, 
                            total_pages=total_pages,
-                           display_range=display_range)
+                           display_range=display_range,
+                           top_movies = top_movies)
