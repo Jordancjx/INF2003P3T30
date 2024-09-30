@@ -147,3 +147,19 @@ def delete_movie(id):
 
         flash('Movie deleted successfully!', 'success')
         return redirect(url_for('index.index'))
+
+#top-rated movie ratings
+@movies_bp.route('/top-rated-movies')
+def top_rated_movies():
+    with current_app.app_context():
+        sql = text("""SELECT m.name as movie.name, m.image_url as movie.image_url, COALESCE(AVG(r.rating,0) as avg_rating
+                      FROM movies m
+                      LEFT JOIN reviews r ON m.id = r.movies_id
+                      GROUP BY m.id
+                      ORDER BY avg_rating DESC;""")
+        result = db.session.execute(sql)
+        top_movies = result.fetchall()
+
+        print(top_movies)
+
+        return render_template('index.html', top_movies = top_movies)

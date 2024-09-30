@@ -2,9 +2,39 @@
 {% block body %}
 
 <section data-scroll-section>
+
     <div class="mast d-flex justify-content-center align-items-center" style="z-index: -1;background-image:linear-gradient(rgba(0, 0, 0, 0.49), rgba(0, 0, 0, 0.49)), url('/static/posters/exhuma-poster-2.jpeg ?>')">
         <h1 class="text-light display-4"><strong>MOVIES</strong></h1>
     </div>
+
+    <!-- Carousel for Top Rated Movies -->
+    <div class="container mt-3">
+        <h2 class="text-center">Top Rated Movies</h2>
+        <div id="topRatedCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                {% for movie in top_movies %}
+                <div class="carousel-item {% if loop.index == 1 %}active{% endif %}">
+                    <div class="d-flex justify-content-center">
+                        <img src="{{ movie.image_url}}" class="d-block w-50" alt="{{ movie.name }}">
+                    </div>
+                    <div class="carousel-caption d-none d-md-block">
+                        <h5>{{ movie.name }}</h5>
+                        <p>Rating: {{ movie.avg_rating | round(2)}}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#topRatedCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#topRatedCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    </div>
+    <!-- End of Top Rated Movies Carousel -->
 
     <div class="container mt-3">
         <div class = "d-flex flex-column mb-3">
