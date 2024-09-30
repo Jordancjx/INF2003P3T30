@@ -1,0 +1,162 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+<section data-scroll-section class="post-content">
+    <div class="container d-flex flex-column">
+        <div id="single_movie_deets" class="w-100 d-flex row mt-3 px-0 justify-between">
+            <div class="col-xl-6 col-lg-6 col-12 d-flex flex-column">
+                <h1 class="display-1">{{ movie.name }}</h1>
+                <p class="mt-3">{{ movie.synopsis }}</p>
+                
+                <div class="mt-1 d-flex flex-column w-50">
+                    <!-- Show average rating -->
+                    <div class="d-flex align-center mb-3">
+                        {% if movie.average_rating %}
+                            {% for i in range(1, movie.average_rating | int + 1) %}
+                                <img style="width:20px; height: 20px;" class="mb-1" src="{{ url_for('static', filename='img/star.png') }}" alt="star">
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Show Price -->
+                    <div class="mt-5">
+                        <h3><strong>Price</strong></h3>
+                        <div>
+                            <h5>${{ movie.price }}</h5>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Movie release date and runtime -->
+                <div class="directed mt-4 d-flex justify-content-between">
+                    <div>
+                        <h3><strong>RELEASED</strong></h3>
+                        <div>
+                            <h5>{{ movie.release_date }}</h5>
+                        </div>
+                    </div>
+                    <div>
+                        <h3><strong>Run Time</strong></h3>
+                        <h5>{{ movie.runtime }} Minutes</h5>
+                    </div>
+                </div>
+
+                <!-- Movie genres and language -->
+                <div class="genres mt-5 d-flex justify-content-between">
+                    <div>
+                        <h3><strong>GENRES</strong></h3>
+                        <h5>{{ movie.genre }}</h5>
+                    </div>
+                    <div>
+                        <h3><strong>LANGUAGES</strong></h3>
+                        <div>
+                            <h5>{{ movie.language }}</h5>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+
+            <!-- Movie Poster -->
+            <div class="col-xl-6 col-lg-6 col-12 d-flex flex-column">
+                <div class="movie-image d-flex justify-content-end align-items-center">
+                    <img class="w-75" src="{{ movie.image_url }}" alt="{{ movie.name }}" loading="lazy">
+                </div>
+            </div>
+
+            <!-- Rental actions -->
+             
+            <!-- Show rental expiry date if applicable -->
+            {% if rental_expiry %}
+            <div class="mt-2">
+                <h2><strong>Rental Expires:</strong> {{ rental_expiry.strftime('%d-%m-%Y') }}</h5>
+            </div>
+            {% endif %}
+
+            <div class="mt-4">
+                {% if 'user_id' in session %}
+                    <!-- Show rental status or option to add to cart -->
+                    {% if rental_expiry %}
+                        {% if rental_expiry >= datetime.now() %}
+                            <button class="btn btn-primary px-5 py-3 disabled" role="button" aria-disabled="true">Rented: Expires on {{ rental_expiry.strftime('%d-%m-%Y') }}</button>
+                        {% else %}
+                            <button class="btn btn-danger px-5 py-3 disabled" role="button" aria-disabled="true">Rental Expired</button>
+                        {% endif %}
+                    {% else %}
+                        <form action="/orders/api/add" method="POST" class="form-group">
+                            <input type="hidden" name="movie_id" value="{{ movie.id }}">
+                            <button type="submit" class="btn btn-lg w-100 btn-primary">Rent Now for ${{ movie.price }}</button>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    <a class="btn btn-primary px-5 py-3 disabled" role="button" aria-disabled="true">Please log in to rent</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <div class="mt-5 container full-width">
+            <h1 class="display-6"><strong>Reviews</strong></h1>
+
+            {% if 'user_id' in session %}
+            <div class="full-width mb-3">
+                {% if movie.review_id %}
+                    <h5><strong>Edit Your Review</strong></h5>
+                    <form method="post" action="/user/api/edit/{{ movie.review_id }}" class="form-group review-form">
+                        <input type="hidden" name="movie_id" value="{{ movie.id }}">
+                        <label for="rating">Select a rating:</label>
+                        <select name="rating" class="form-select mb-2">
+                            <option value="5" {% if movie.review_rating == 5 %} selected {% endif %}>5/5</option>
+                            <option value="4" {% if movie.review_rating == 4 %} selected {% endif %}>4/5</option>
+                            <option value="3" {% if movie.review_rating == 3 %} selected {% endif %}>3/5</option>
+                            <option value="2" {% if movie.review_rating == 2 %} selected {% endif %}>2/5</option>
+                            <option value="1" {% if movie.review_rating == 1 %} selected {% endif %}>1/5</option>
+                        </select>
+                        <label for="review">Review:</label>
+                        <textarea name="review" required class="form-control mb-2" rows="3">{{ movie.review_body }}</textarea>
+                        <button type="submit" class="btn btn-success">Edit Review</button>
+                    </form>
+                {% else %}
+                    <h5><strong>Add a Review</strong></h5>
+                    <form method="post" action="/user/api/add_review" class="form-group review-form">
+                        <input type="hidden" name="movie_id" value="{{ movie.id }}">
+                        <label for="rating">Select a rating:</label>
+                        <select name="rating" class="form-select mb-2">
+                            <option value="5">5/5</option>
+                            <option value="4">4/5</option>
+                            <option value="3">3/5</option>
+                            <option value="2">2/5</option>
+                            <option value="1">1/5</option>
+                        </select>
+                        <label for="review">Review:</label>
+                        <textarea name="review" required class="form-control mb-2" rows="3"></textarea>
+                        <button type="submit" class="btn btn-success">Add Review</button>
+                    </form>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Display all reviews -->
+            <div class="reviews full-width d-flex flex-column">
+                {% for review in reviews %}
+                    <div class="single-review full-width p-3 mt-2 mb-3 shadow-sm">
+                        <div class="d-flex justify-content-between">
+                            <h6 class="user"><strong>{{ review.username }}</strong></h6>
+                            <h6>{{ review.written_date }}</h6>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                {% for i in range(1, review.rating + 1) %}
+                                    <img style="width:20px; height: 20px;" class="mb-1" src="{{ url_for('static', filename='img/star.png') }}" alt="star">
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <p>{{ review.body }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

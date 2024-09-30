@@ -5,6 +5,7 @@ from config.dbConnect import db
 from models.user import User
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from datetime import datetime, timedelta
 import os
 
 UPLOAD_FOLDER = 'public/profile_pics'  # Ensure this folder exists
@@ -205,3 +206,180 @@ def update_profile():
             print(e)
             flash("An error occurred while updating the profile", "error")
             return redirect(url_for('user.getProfile'))
+
+
+# User's Rented Movies Page
+@user_bp.route('/movies')
+def rented_movies():
+    # Check if the user is logged in
+    if 'user_id' not in session:
+        flash("Please log in to view your rented movies.", "error")
+        return redirect(url_for('user.login'))
+    
+    user_id = session['user_id']
+    rental_period_days = 7  # Rental period of 7 days
+    with current_app.app_context():
+        # Fetch rented movies
+        sql = text("""
+            SELECT m.id, m.name, m.synopsis, m.release_date, m.runtime, m.price, m.image_url, p.purchase_timestamp
+            FROM movies m
+            INNER JOIN history h ON h.movie_id = m.id
+            INNER JOIN purchases p ON h.purchase_id = p.id
+            WHERE p.users_id = :user_id
+        """)
+        result = db.session.execute(sql, {"user_id": user_id})
+        movies = result.fetchall()
+
+        # Calculate expiration dates and check if rentals are still active
+        rented_movies = []
+        for movie in movies:
+            purchased_at = movie.purchase_timestamp  # Rental start date
+            rental_expiry = datetime.strptime(purchased_at, "%Y-%m-%d %H:%M:%S.%f") + timedelta(days=rental_period_days)  # Expiration date
+            is_active = rental_expiry >= datetime.now()  # Check if rental is still active
+
+            # Append movie details along with the expiration date and rental status
+            rented_movies.append({
+                "id": movie.id,
+                "name": movie.name,
+                "synopsis": movie.synopsis,
+                "release_date": movie.release_date,
+                "runtime": movie.runtime,
+                "price": movie.price,
+                "image_url": movie.image_url,
+                "rental_expiry": rental_expiry,
+                "is_active": is_active
+            })
+        
+        # Pass the rented movies to the template
+        return render_template('/user/movies.html', movies=rented_movies)
+
+
+# Rented Movie Details Page
+@user_bp.route('/movies_detail/<int:movie_id>')
+def movie_details(movie_id):
+    # Check if the user is logged in
+    if 'user_id' not in session:
+        flash("Please log in to view movie details.", "error")
+        return redirect(url_for('user.login'))
+
+    user_id = session['user_id']
+    rental_period_days = 7  # Rental period of 7 days
+    
+    with current_app.app_context():
+        # Fetch movie details
+        movie_sql = text("""
+            SELECT m.*, r.body AS review_body, r.rating AS review_rating, r.id AS review_id, p.purchase_timestamp AS rental_date 
+            FROM movies m
+            LEFT JOIN reviews r ON r.movies_id = m.id AND r.users_id = :user_id
+			INNER JOIN purchases p ON p.users_id = :user_id
+			INNER JOIN history h ON h.purchase_id = p.id AND h.movie_id = m.id
+            WHERE m.id = :movie_id
+        """)
+        movie_result = db.session.execute(movie_sql, {"user_id": user_id, "movie_id": movie_id})
+        movie = movie_result.fetchone()
+
+        # Calculate expiration date
+        rental_expiry = None
+        if movie.rental_date:
+            rental_expiry = datetime.strptime(movie.rental_date, "%Y-%m-%d %H:%M:%S.%f") + timedelta(days=rental_period_days)
+        
+        # Fetch all reviews for the movie
+        reviews_sql = text("""
+            SELECT r.*, u.username 
+            FROM reviews r
+            JOIN users u ON r.users_id = u.id
+            WHERE r.movies_id = :movie_id
+        """)
+        reviews_result = db.session.execute(reviews_sql, {"movie_id": movie_id})
+        reviews = reviews_result.fetchall()
+
+    return render_template('/user/movies_detail.html', datetime=datetime, movie=movie, reviews=reviews, rental_expiry=rental_expiry)
+
+
+# Edit Review in Rented Movie Details Page
+@user_bp.route('/api/edit/<int:review_id>', methods=['POST'])
+def edit_review(review_id):
+    if 'user_id' not in session:
+        flash("Please log in to edit your review.", "error")
+        return redirect(url_for('user.login'))
+
+    # Get form data
+    movie_id = request.form.get('movie_id')
+    rating = request.form.get('rating')
+    review_body = request.form.get('review')
+    user_id = session['user_id']
+
+    if not rating or not review_body:
+        flash("Please fill out all fields.", "error")
+        return redirect(url_for('user.movie_details', movie_id=movie_id))
+
+    # Ensure the user owns the review before editing
+    try:
+        review_sql = text("""
+            SELECT * FROM reviews WHERE id = :review_id AND users_id = :user_id
+        """)
+        review_result = db.session.execute(review_sql, {"review_id": review_id, "user_id": user_id})
+        review = review_result.fetchone()
+
+        if not review:
+            flash("You do not have permission to edit this review.", "error")
+            return redirect(url_for('user.movie_details', movie_id=movie_id))
+
+        # Update the review
+        update_sql = text("""
+            UPDATE reviews
+            SET rating = :rating, body = :review_body, written_date = CURRENT_TIMESTAMP
+            WHERE id = :review_id
+        """)
+        db.session.execute(update_sql, {
+            "rating": rating,
+            "review_body": review_body,
+            "review_id": review_id
+        })
+        db.session.commit()
+
+        flash("Review updated successfully.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash("Error editing review. Please try again.", "error")
+    
+    return redirect(url_for('user.movie_details', movie_id=movie_id))
+
+
+# Add Review in Rented Movie Details Page
+@user_bp.route('/api/add_review', methods=['POST'])
+def add_review():
+    if 'user_id' not in session:
+        flash("Please log in to add a review.", "error")
+        return redirect(url_for('user.login'))
+
+    # Get form data
+    movie_id = request.form.get('movie_id')
+    rating = request.form.get('rating')
+    review_body = request.form.get('review')
+    user_id = session['user_id']
+    
+    if not movie_id or not rating or not review_body:
+        flash("Please fill out all fields.", "error")
+        return redirect(url_for('user.movie_details', movie_id=movie_id))
+
+    # Insert the review into the database
+    try:
+        insert_sql = text("""
+            INSERT INTO reviews (movies_id, users_id, rating, body, written_date)
+            VALUES (:movie_id, :user_id, :rating, :review_body, CURRENT_TIMESTAMP)
+        """)
+        db.session.execute(insert_sql, {
+            "movie_id": movie_id,
+            "user_id": user_id,
+            "rating": rating,
+            "review_body": review_body
+        })
+        db.session.commit()
+
+        flash("Review added successfully.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash("Error adding review. Please try again.", "error")
+    
+    return redirect(url_for('user.movie_details', movie_id=movie_id))

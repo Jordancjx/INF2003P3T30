@@ -1,0 +1,59 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+
+<section data-scroll-section>
+    <div class="mast d-flex justify-content-center align-items-center" style="z-index: -1;background-image:linear-gradient(rgba(0, 0, 0, 0.49), rgba(0, 0, 0, 0.49)), url('/static/posters/exhuma-poster-2.jpeg')">
+        <h1 class="text-light display-4"><strong>RENTED MOVIES</strong></h1>
+    </div>
+
+    <section id="movieSection" data-scroll class="container d-flex p-2 flex-wrap mt-3">
+        {% for movie in movies %}
+        <div class="col-xl-4 col-l-4 col-sm-12 col-12 col-md-6 p-1 mb-4 d-flex align-items-stretch mt-4">
+            <div class="card w-100 d-flex flex-column">
+                <div class="view overlay border-bottom">
+                    <img class="card-img-top" src="{{ movie.image_url }}" alt="{{ movie.name }}" loading="lazy">
+                </div>
+                <div class="card-body d-flex flex-column flex-grow-1">
+                    <div>
+                        <h2 class="card-title">{{ movie.name }}</h2>
+                        <hr class="w-100" />
+                        <p class="card-text mb-0">{{ movie.synopsis }}</p>
+                        <hr class="w-100" />
+                        <div class="row mt-2">
+                            <div class="col text-start">
+                                <p><i class="fas fa-calendar mr-2"></i> {{ movie.release_date }}</p>
+                            </div>
+                            <div class="col text-end">
+                                <p class="card-text"><i class="fas fa-clock mr-2"></i> {{ movie.runtime }} minutes</p>
+                            </div>
+                        </div>
+                        <!-- Show expiration date of the rental -->
+                        <div class="row mt-2">
+                            <div class="col text-start">
+                                <p><strong>Rental Expires:</strong> {{ movie.rental_expiry.strftime('%d-%m-%Y') }}</p>
+                            </div>
+                            <div class="col text-end">
+                                {% if movie.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-danger">Expired</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-auto text-end">
+                        <!-- Button actions for viewing the movie or leaving/editing a review -->
+                        <a href="/user/movies_detail/{{ movie.id }}" class="btn" style="background-color: #FFD700;">
+                            View Movie Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </section>
+
+    <!-- Add pagination if needed -->
+</section>
+
+{% endblock %}
