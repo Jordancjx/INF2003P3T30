@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, flash, request, redirect, current_app, url_for
+from flask import Blueprint, render_template, flash, request, redirect, current_app, url_for, session
 import config.constants
 from sqlalchemy import text
 from config.dbConnect import db
@@ -6,6 +6,7 @@ from models.movie import Movie
 from werkzeug.utils import secure_filename
 from models.review import Review
 import os
+from datetime import datetime, timedelta
 
 movies_bp = Blueprint('movie', __name__, template_folder=config.constants.template_dir,
                       static_folder=config.constants.static_dir, static_url_path='/public', url_prefix='/movie')
@@ -31,17 +32,49 @@ def search():
 
 @movies_bp.route('/single/<int:id>', methods=['GET'])
 def single(id):
+    rental_period_days = 7  # Rental period of 7 days
     with current_app.app_context():
-        sql = text("SELECT * FROM movies LEFT JOIN reviews ON movies.id = reviews.movies_id LEFT JOIN users ON reviews.users_id = users.id WHERE movies.id = :id")
-        result = db.session.execute(sql, {"id": id})
-        rows = result.fetchall()
+        if 'user_id' in session:
+            user_id = session['user_id']
+            # Fetch movie details
+            sql = text("""
+                        SELECT m.*, 
+                        p.purchase_timestamp AS rental_date 
+                        FROM movies m 
+                        LEFT JOIN purchases p ON p.users_id = :user_id
+                        LEFT JOIN history h ON h.purchase_id = p.id AND h.movie_id = m.id
+                        WHERE m.id = :movie_id
+                    """)
+            movie_result = db.session.execute(sql, {"movie_id": id, 'user_id': user_id})
+            movie = movie_result.fetchone()
+            if movie.rental_date:
+                movie.rental_date = datetime.strptime(str(movie.rental_date),
+                                                      "%Y-%m-%d %H:%M:%S.%f") + timedelta(days=rental_period_days)
 
-        if not rows:
-            flash('Movie not found', 'error')
-            return redirect(url_for('index.index'))
-        
-        movie = rows[0]
-        reviews = [row for row in rows if row.id]
+            # Fetch all reviews for the movie
+            sql = text("""
+                SELECT r.*, u.username 
+                FROM reviews r
+                JOIN users u ON r.users_id = u.id
+                WHERE r.movies_id = :movie_id
+            """)
+            reviews_result = db.session.execute(sql, {"movie_id": id})
+            reviews = reviews_result.fetchall()
+
+        else:
+            sql = text("SELECT * FROM movies "
+                       "LEFT JOIN reviews ON movies.id = reviews.movies_id "
+                       "LEFT JOIN users ON reviews.users_id = users.id "
+                       "WHERE movies.id = :id")
+            result = db.session.execute(sql, {"id": id})
+            rows = result.fetchall()
+
+            if not rows:
+                flash('Movie not found', 'error')
+                return redirect(url_for('index.index'))
+
+            movie = rows[0]
+            reviews = [row for row in rows if row.id]
 
         return render_template('movie/single.html', movie=movie, reviews=reviews)
 

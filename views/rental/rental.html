@@ -1,12 +1,13 @@
 {% extends "layouts/base.html" %}
 {% block body %}
 
-<section data-scroll-section>
+<section data-scroll-section class="text-center">
     <div class="mast d-flex justify-content-center align-items-center" style="z-index: -1;background-image:linear-gradient(rgba(0, 0, 0, 0.49), rgba(0, 0, 0, 0.49)), url('/static/posters/exhuma-poster-2.jpeg')">
         <h1 class="text-light display-4"><strong>RENTED MOVIES</strong></h1>
     </div>
 
     <section id="movieSection" data-scroll class="container d-flex p-2 flex-wrap mt-3">
+        {% if movies %}
         {% for movie in movies %}
         <div class="col-xl-4 col-l-4 col-sm-12 col-12 col-md-6 p-1 mb-4 d-flex align-items-stretch mt-4">
             <div class="card w-100 d-flex flex-column">
@@ -43,7 +44,7 @@
                     </div>
                     <div class="mt-auto text-end">
                         <!-- Button actions for viewing the movie or leaving/editing a review -->
-                        <a href="/user/movies_detail/{{ movie.id }}" class="btn" style="background-color: #FFD700;">
+                        <a href="/movie/single/{{ movie.id }}" class="btn" style="background-color: #FFD700;">
                             View Movie Details
                         </a>
                     </div>
@@ -51,6 +52,11 @@
             </div>
         </div>
         {% endfor %}
+        {% else %}
+        <div class="text-center">
+            <h5 class="text-light display-4"><strong>You have no rentals at the moment</strong></h5>
+        </div>
+        {% endif %}
     </section>
 
     <!-- Add pagination if needed -->
