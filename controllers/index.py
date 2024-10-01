@@ -52,7 +52,7 @@ def index():
     # Fetch top-rated movies for the carousel
     with current_app.app_context():
         top_rated_sql = text("""
-            SELECT m.name as name, m.image_url as image_url, COALESCE(AVG(r.rating), 0) as avg_rating
+            SELECT m.*, COALESCE(AVG(r.rating), 0) as avg_rating
             FROM movies m
             LEFT JOIN reviews r ON m.id = r.movies_id
             GROUP BY m.id
