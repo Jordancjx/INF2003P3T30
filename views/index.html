@@ -18,7 +18,7 @@
                         <div class="row align-items-center">
                             <!-- Movie Image on the Left -->
                             <div class="col-md-4 d-flex justify-content-center align-items-center">
-                                <img alt="{{ movie.name }}" class="d-block w-100" src="{{ movie.image_url }}">
+                                <img alt="{{ movie.name }}" class="d-block w-100" src="https://image.tmdb.org/t/p/w500/{{ movie.image_url }}">
                             </div>
 
                             <!-- Movie Details on the Right -->
@@ -91,7 +91,7 @@
                 </div>
                 {%endif%}
                 <div class="view overlay border-bottom">
-                    <img alt="{{movie.name}}" class="card-img-top" loading="lazy" src="{{movie.image_url}}">
+                    <img alt="{{movie.name}}" class="card-img-top" loading="lazy" src="https://image.tmdb.org/t/p/w500/{{movie.image_url}}">
                 </div>
                 <div class="card-body d-flex flex-column">
                     <div>
@@ -124,26 +124,6 @@
                                 <p class="card-text"><i class="fas fa-clock mr-2"></i>
                                     {{movie.runtime}} minutes
                                 </p>
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col text-start">
-                                <p class="mb-2 mt-2">Available in:</p>
-                                <div class="full-width mt-1 mb-1">
-                                    <!--                                {% for lang in movie.languages %}-->
-                                    <!--                                    <span class="badge badge-secondary bg-secondary">-->
-                                    <!--                                        {{lang}}-->
-                                    <!--                                    </span>-->
-                                    <!--                                {%endfor%}-->
-                                </div>
-                            </div>
-                            <div class="col text-end">
-                                <p class="mb-0">Genres:</p>
-                                <!--                                {% for genre in movie.genres %}-->
-                                <!--                                    <span class="badge badge-secondary bg-secondary">-->
-                                <!--                                        {{genre}}-->
-                                <!--                                    </span>-->
-                                <!--                                {%endfor%}-->
                             </div>
                         </div>
                     </div>

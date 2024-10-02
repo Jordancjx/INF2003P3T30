@@ -33,9 +33,14 @@ def search():
 @movies_bp.route('/single/<int:id>', methods=['GET'])
 def single(id):
     rental_period_days = 7  # Rental period of 7 days
+    rental_expiry = None
+    is_active = None
+    review_exists = False
+
     with current_app.app_context():
         if 'user_id' in session:
             user_id = session['user_id']
+
             # Fetch movie details
             sql = text("""
                         SELECT m.*, 
@@ -47,9 +52,21 @@ def single(id):
                     """)
             movie_result = db.session.execute(sql, {"movie_id": id, 'user_id': user_id})
             movie = movie_result.fetchone()
+
+            # Calculate the rental expiry date of movie
             if movie.rental_date:
-                movie.rental_date = datetime.strptime(str(movie.rental_date),
-                                                      "%Y-%m-%d %H:%M:%S.%f") + timedelta(days=rental_period_days)
+                rental_expiry = datetime.strptime(movie.rental_date, "%Y-%m-%d %H:%M:%S.%f") + timedelta(days=rental_period_days)
+            is_active = rental_expiry >= datetime.now()  # Check if rental is still active
+
+            # Check if the user has already left a review for this movie
+            sql = text("""
+                SELECT COUNT(*) 
+                FROM reviews 
+                WHERE users_id = :user_id AND movies_id = :movie_id
+            """)
+            review_check = db.session.execute(sql, {"user_id": user_id, "movie_id": id}).fetchone()
+            if review_check[0] > 0:
+                review_exists = True
 
             # Fetch all reviews for the movie
             sql = text("""
@@ -76,7 +93,7 @@ def single(id):
             movie = rows[0]
             reviews = [row for row in rows if row.id]
 
-        return render_template('movie/single.html', movie=movie, reviews=reviews)
+        return render_template('movie/single.html', movie=movie, reviews=reviews, rental_expiry=rental_expiry, is_active=is_active, review_exists=review_exists)
 
 
 # Api to add movies, won't render any page
