@@ -42,7 +42,7 @@ def edit(id):
         result = db.session.execute(sql, {"id": id, "users_id": users_id})
         review = result.fetchone()
 
-        if review is not None:
+        if review is None:
             flash('Review not found or you do not have the permission to edit', 'error')
             return redirect(url_for('index.index'))
 
@@ -64,7 +64,7 @@ def update(id):
             review_result = db.session.execute(review_sql, {"review_id": id, "user_id": users_id})
             review = review_result.fetchone()
 
-            if review is not None:
+            if review is None:
                 flash("You do not have permission to edit this review.", "error")
                 return redirect(url_for('movie.single', id=movie_id))
 
