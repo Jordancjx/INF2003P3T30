@@ -1,0 +1,161 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+<section class="post-content mt-3" data-scroll-section>
+    <div class="container d-flex flex-row w-100">
+        <div class="w-25 p-2">
+            <div style = "min-height: 200px" class = "d-flex flex-column shadow p-3 mb-3 bg-body-tertiary rounded">
+                <div class = "h-25 d-flex justify-content-center align-items-center">
+                    <img
+                    id="pfp"
+                    style="
+                        height: 100px;
+                        border-radius: 50%;
+                        object-fit: cover;
+                        border: 1px solid black;
+                    "
+                    src="{{ thread.profile_pic_url }}"
+                    alt="Profile Image"
+                    />
+                </div>
+                <div class = "h-75 py-3 d-flex flex-column align-items-center">
+                    <h4 class = "text-dark">{{thread.username}}</h4>
+                    <p class = "text-dark m-0">{{thread.email}}</p>
+                    {%if thread.admin_controls == 1 %}
+                    <h5 class = "text-danger mt-2"><strong>Admin</strong></h5>
+                    {%endif%}
+                </div>
+            </div>
+
+            {% if 'user_id' in session %}
+                {% if session['user_id'] == thread.users_id or 'admin' in session %}
+                <div style = "min-height: 50px" class = "d-flex flex-row shadow p-3 mb-3 bg-body-tertiary rounded">
+                    <button type="button" class="btn btn-warning me-1" data-bs-toggle="modal" data-bs-target="#editThreadModal">
+                        Edit Thread
+                    </button>
+                    <a href="{{ url_for('forum.deleteThread', id = thread.id) }}" class="btn btn-danger me-2">Delete Thread</a>
+                </div>
+                {%endif%}
+            {%endif%}
+        </div>
+        <div class="w-75 p-2 m-0">
+            <div style = "min-height: 200px" class = "text-dark d-flex flex-column shadow p-3 mb-3 bg-body-tertiary rounded">
+                <h3 class = "m-0">{{thread.title}}</h3>
+                <hr class="hr" />
+                <p class = "m-0">{{thread.content}}</p>
+                <div style = "margin-top:auto">
+                    <hr class="hr" />
+                    <div class = "w-100 d-flex flex-row justify-content-between">
+                        <div>Created on: {{thread.created_time}}</div>
+                        {% if thread.edited == 1 %}
+                            <div>Edited on: {{thread.edited_time}}</div>
+                        {%endif%}
+                    </div>
+                    
+                </div>
+            </div>
+            {%for post in posts%}
+            <div style = "min-height: 200px" class = "d-flex flex-row text-dark shadow p-3 mb-3 bg-body-tertiary rounded">
+                <div style = "width:17%" class = "p-2 d-flex flex-column align-items-center">
+                    <div>
+                        <img
+                        id="pfp"
+                        style="
+                            height: 100px;
+                            border-radius: 50%;
+                            object-fit: cover;
+                            border: 1px solid black;
+                        "
+                        src="{{ post.profile_pic_url }}"
+                        alt="Profile Image"
+                        />
+                    </div>
+                    <div class = "d-flex flex-column align-items-center">
+                        <h5 class = "mt-2"><strong>{{post.username}}</strong></h5>
+                        {%if post.admin_controls == 1 %}
+                            <h6 class = "text-danger m-0"><strong>Admin</strong></h6>
+                        {%endif%}
+                    </div>
+                    
+                </div>
+                <div class="vr"></div>
+                <div class = "p-2 ps-4 d-flex flex-column align-items-between w-100">
+                    <div>{{post.content}}</div>
+                    
+                    <div style = "margin-top:auto" class = "w-100">
+                        <div>
+                            {%if 'user_id' in session and session['user_id'] == post.user_id%}
+                            <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{post.id}}" aria-expanded="false" aria-controls="collapse-{{post.id}}">
+                                Edit Reply
+                            </button>
+                            <div class="collapse" id="collapse-{{post.id}}">
+                                <form action="/forum/api/editReply" method="POST" enctype="multipart/form-data">
+                                    <textarea name="content" value = "{{post.content}}" class="form-control"
+                                    rows="3">{{post.content}}</textarea>
+                                    <input type="hidden" name="thread_id" value = {{thread.id}}>
+                                    <input type="hidden" name="post_id" value = {{post.id}}>
+                                    <button type="submit" class="btn btn-success">Submit reply</button>
+                                </form>
+                            </div>
+                            <a href="{{ url_for('forum.deleteReply', id = post.id, thread_id = thread.id) }}" class="btn btn-danger me-2">Delete Reply</a>
+                            {%endif%}
+                        </div>
+                        <hr class="hr w-100" />
+                        <div class = "d-flex flex-row w-100 justify-content-between">
+                            <div>Replied on: {{post.posted_time}}</div>
+                            {% if post.edited == 1 %}
+                                <div>Edited on: {{post.edited_time}}</div>
+                            {%endif%}
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            {%endfor%}
+            
+            {%if 'user_id' in session %}
+            <div style = "min-height: 200px" class = "text-dark d-flex flex-column shadow p-3 mb-5 bg-body-tertiary rounded">
+                <h5><strong>Leave a reply</strong></h5>
+                <form action="/forum/api/reply" class="form-group review-form w-100" method="post" style="width: 40%">
+                    <input type="hidden" name="thread_id" value = "{{thread.id}}">
+                    <textarea aria-label="review" class="form-control mb-2" name="content" required
+                            rows="4"></textarea>
+                    <button class="btn btn-success" type="submit">Reply</button>
+                </form>
+            </div>
+            {%endif%}
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="editThreadModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <form action="/forum/api/editThread" method="POST" enctype="multipart/form-data">
+                <div class="form-group mt-3">
+                    <label for="title" class = "text-dark">Title</label>
+                    <input type="text" value = "{{thread.title}}" name="title" class="form-control"
+                        placeholder="Title">
+                </div> 
+                <div class="form-group mt-3">
+                    <label for="content" class = "text-dark">Content</label>
+                    <textarea name="content" value = "{{thread.content}}" class="form-control"
+                        rows="3">{{thread.content}}</textarea>
+                </div>
+                <input type="hidden" name="thread_id" value = {{thread.id}}>
+                <div class="form-group mt-3">
+                    <button type="submit" class="btn btn-success">Edit thread</button>
+                </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+
+
+{% endblock %}
