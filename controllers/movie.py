@@ -21,6 +21,12 @@ def allowed_file(filename):
 
 @movies_bp.route('/add')
 def add():
+    #check if user is logged in and is admin
+    if 'user_id' not in session or 'admin' not in session:
+        flash('You must be logged in as an admin to add a movie.', 'error')
+        return redirect(url_for('index.index'))
+    
+    #if user is logged in, render the add movie page
     return render_template('movie/add.html')
 
 
@@ -99,6 +105,11 @@ def single(id):
 # Api to add movies, won't render any page
 @movies_bp.route('/api/add', methods=['POST'])
 def post_add_movie():
+     #check if user is logged in and is admin
+    if 'user_id' not in session or 'admin' not in session:
+        flash('You must be logged in as an admin to add a movie.', 'error')
+        return redirect(url_for('index.index'))
+
     with current_app.app_context():
         try:
             poster_url = None
