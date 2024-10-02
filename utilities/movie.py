@@ -38,7 +38,9 @@ async def insert_movies(df_chunk):
                 runtime=row.runtime,
                 tmdb_id=row.id,
                 imdb_id=row.imdb_id,
-                image_url=poster_url if poster_url else None
+                image_url=poster_url if poster_url else None,
+                language=row.spoken_languages,
+                genre=row.genres
             )
                 for row, poster_url in zip(df_chunk.itertuples(), poster_urls)
             ]
@@ -62,9 +64,9 @@ def clean_insert_movies(chunk_size=CHUNK_SIZE):
                      dtype='unicode')
 
     # Drop unwanted columns
-    df = df.drop(columns=['vote_count', 'status', 'revenue', 'backdrop_path', 'budget', 'homepage',
+    df = df.drop(columns=['vote_count', 'status', 'revenue', 'backdrop_path', 'budget', 'homepage', 'original_language',
                           'original_title', 'poster_path', 'tagline', 'production_companies', 'production_countries',
-                          'spoken_languages'])
+                          'adult'])
     df = df.head(DF_SIZE)
     df.fillna('', inplace=True)
 

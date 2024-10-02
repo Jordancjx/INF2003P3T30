@@ -20,40 +20,8 @@
                         {%endif%}
                     </div>
 
-                    <!-- <div>
-                        <?php if (isset($_SESSION['user_id'])) { ?>
-                            <?php if ($check->num_rows == 0) { ?>
-                                <?php if (isset($_SESSION['cart_items'][$movie['id']])) { ?>
-                                    <a class="btn btn-primary px-5 py-3 disabled" role="button" aria-disabled="true">Movie
-                                        already in cart</a>
-                                <?php } else { ?>
-                                    <a href="/user/cart.php?movie_id=<?php echo $movie['id'] ?>"
-                                        class="px-5 py-3 btn btn-primary">Rent
-                                        now
-                                        for $
-                                        <?php echo $movie['price'] ?>
-                                    </a>
-                                <?php } ?>
-                            <?php } else { ?>
-                                <a class="btn btn-primary px-5 py-3 disabled" role="button" aria-disabled="true">You
-                                    have already rented this!</a>
-                            <?php } ?>
-                        <?php } else { ?>
-                            <a class="btn btn-primary px-5 py-3 disabled" role="button" aria-disabled="true">Please
-                                log in or register to rent</a>
-                        <?php } ?>
-                    </div> -->
-
                 </div>
                 <div class="directed mt-4 d-flex justify-content-between">
-                    <!-- <div>
-                        <h2><strong>DIRECTOR</strong></h2>
-                        <div>
-                            <h3>
-                                <?php echo $movie['directors'] ?>
-                            </h3>
-                        </div>
-                    </div> -->
                     <div>
                         <h3><strong>RELEASED</strong></h3>
                         <div>
@@ -99,7 +67,7 @@
             </div>
             <div class="col-xl-6 col-lg-6 col-12 d-flex flex-column">
                 <div class="movie-image d-flex justify-content-end align-items-center">
-                    <img alt="{{movie.name}}" class="w-75" loading="lazy" src="{{movie.image_url}}">
+                    <img alt="{{movie.name}}" class="w-75" loading="lazy" src="https://image.tmdb.org/t/p/w500/{{movie.image_url}}">
                 </div>
             </div>
             <!-- Rental actions -->

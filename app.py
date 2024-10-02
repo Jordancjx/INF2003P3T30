@@ -44,6 +44,7 @@ from models.purchases import Purchases, History
 with app.app_context():
     # ABSOLUTELY DO NOT UNCOMMENT, TESTING PURPOSES ONLY
     # db.drop_all()
+    # Movie.__table__.drop(db.engine)
 
     # Create tables
     db.create_all()
