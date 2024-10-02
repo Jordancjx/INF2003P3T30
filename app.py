@@ -10,6 +10,7 @@ from controllers.review import reviews_bp
 from controllers.orders import orders_bp
 from controllers.purchases import purchases_bp
 from controllers.rental import rentals_bp
+from controllers.forum import forum_bp
 from utilities.movie import clean_insert_movies
 
 import config.constants
@@ -34,12 +35,14 @@ app.register_blueprint(reviews_bp)
 app.register_blueprint(orders_bp)
 app.register_blueprint(purchases_bp)
 app.register_blueprint(rentals_bp)
+app.register_blueprint(forum_bp)
 
 from models.movie import Movie
 from models.user import User
 from models.review import Review
 from models.order import Order
 from models.purchases import Purchases, History
+from models.forum import Thread, Post
 
 with app.app_context():
     # ABSOLUTELY DO NOT UNCOMMENT, TESTING PURPOSES ONLY

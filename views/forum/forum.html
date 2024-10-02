@@ -1,0 +1,53 @@
+{% extends "layouts/base.html" %} {% block body %}
+
+<section data-scroll-section>
+  <div class="container">
+    <div class="mt-2 d-flex justify-content-center align-items-center" style = "min-height: 200px">
+      <h1 class="text-light display-4"><strong>FORUM</strong></h1>
+    </div>
+    {% if 'user_id' in session %}
+    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#exampleModal">
+        Create a Thread
+    </button>
+    {%endif%}
+    <div class="d-flex flex-column mt-3">
+        <div class="list-group">
+            {%for thread in threads %}
+            <a href="/forum/single/{{thread.id}}" class="d-flex flex-column list-group-item list-group-item-action" aria-current="true">
+              <div><h3 class = "mt-2">{{thread.title}}</h3></div>
+              <div><p>Created by {{thread.username}} on {{thread.created_time}}</div>
+            </a>
+            {%endfor%}
+          </div>
+    </div>
+  </div>
+</section>
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <form action="/forum/api/create" method="POST" enctype="multipart/form-data">
+                <div class="form-group mt-3">
+                    <label for="title" class = "text-dark">Title</label>
+                    <input type="text" name="title" class="form-control"
+                        placeholder="Title">
+                </div> 
+                <div class="form-group mt-3">
+                    <label for="content" class = "text-dark">Content</label>
+                    <textarea name="content" class="form-control"
+                        rows="3"></textarea>
+                </div>
+                <div class="form-group mt-3">
+                    <button type="submit" class="btn btn-success">Create thread</button>
+                </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
