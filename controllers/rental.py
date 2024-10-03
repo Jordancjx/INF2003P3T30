@@ -21,14 +21,14 @@ def rentals():
 
     with current_app.app_context():
         # Fetch rented movies
-        sql = text("""
+        rented_movies_sql = text("""
             SELECT m.id, m.name, m.synopsis, m.release_date, m.runtime, m.price, m.image_url, p.purchase_timestamp
             FROM movies m
             INNER JOIN history h ON h.movie_id = m.id
             INNER JOIN purchases p ON h.purchase_id = p.id
             WHERE p.users_id = :user_id
         """)
-        result = db.session.execute(sql, {"user_id": user_id})
+        result = db.session.execute(rented_movies_sql, {"user_id": user_id})
         movies = result.fetchall()
 
         # Calculate expiration dates and check if rentals are still active
@@ -52,5 +52,33 @@ def rentals():
                 "is_active": is_active
             })
 
+        # Fetch user's most watched genre and recommend unwatched movies from user's most watched genre
+        recommendation_sql = text("""
+            WITH most_watched_genre AS (
+                SELECT m.genre, COUNT(m.id) AS genre_count
+                FROM movies m
+                INNER JOIN history h ON h.movie_id = m.id
+                INNER JOIN purchases p ON h.purchase_id = p.id
+                WHERE p.users_id = :user_id
+                GROUP BY m.genre
+                ORDER BY genre_count DESC
+                LIMIT 1
+            )
+            SELECT m.id, m.name, m.synopsis, m.release_date, m.runtime, m.price, m.image_url
+            FROM movies m
+            WHERE m.image_url IS NOT NULL AND m.genre IN (
+                SELECT genre FROM most_watched_genre
+            )
+            AND m.id NOT IN (
+                SELECT h.movie_id
+                FROM history h
+                INNER JOIN purchases p ON h.purchase_id = p.id
+                WHERE p.users_id = :user_id
+            )
+            LIMIT 30;
+        """)
+        result = db.session.execute(recommendation_sql, {"user_id": user_id})
+        recommendations = result.fetchall()
+
         # Pass the rented movies to the template
-        return render_template('/rental/rental.html', movies=rented_movies)
+        return render_template('/rental/rental.html', movies=rented_movies, recommendations=recommendations)
