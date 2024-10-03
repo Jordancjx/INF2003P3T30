@@ -58,11 +58,12 @@ def single(id):
                     """)
             movie_result = db.session.execute(sql, {"movie_id": id, 'user_id': user_id})
             movie = movie_result.fetchone()
+            is_active = False
 
             # Calculate the rental expiry date of movie
             if movie.rental_date:
                 rental_expiry = datetime.strptime(movie.rental_date, "%Y-%m-%d %H:%M:%S.%f") + timedelta(days=rental_period_days)
-            is_active = rental_expiry >= datetime.now()  # Check if rental is still active
+                is_active = rental_expiry >= datetime.now()  # Check if rental is still active
 
             # Check if the user has already left a review for this movie
             sql = text("""

@@ -2,7 +2,7 @@
 {% block body %}
 
 <section data-scroll-section class="text-center">
-    <div class="mast d-flex justify-content-center align-items-center" style="z-index: -1;background-image:linear-gradient(rgba(0, 0, 0, 0.49), rgba(0, 0, 0, 0.49)), url('/static/posters/exhuma-poster-2.jpeg')">
+    <div class="mt-4 d-flex justify-content-center align-items-center">
         <h1 class="text-light display-4"><strong>RENTED MOVIES</strong></h1>
     </div>
 
@@ -44,7 +44,7 @@
                     </div>
                     <div class="mt-auto text-end">
                         <!-- Button actions for viewing the movie or leaving/editing a review -->
-                        <a href="/movie/single/{{ movie.id }}" class="btn" style="background-color: #FFD700;">
+                        <a href="/movie/single/{{ movie.id }}" class="btn btn-primary">
                             View Movie Details
                         </a>
                     </div>

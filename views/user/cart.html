@@ -2,14 +2,14 @@
 {% block body %}
 
 <section style="min-height:51vh;" class="container d-flex flex-column justify-content-center align-items-center pt-5" data-scroll-section>
-    <div class="w-75 mb-2">
+    <div class="w-75 mb-2 text-center">
         <h2>Your Cart</h2>
     </div>
 
     <!-- Check if there are orders -->
     {% if orders %}
     <div class="w-75">
-        <table class="table">
+        <table class="table text-center">
             <thead>
                 <tr>
                     <th>Movie Name</th>
@@ -36,12 +36,16 @@
     </div>
 
     <!-- Total Price and Proceed to Payment Button -->
-    <div class="w-75 mt-3 d-flex align-items-center">
-        <h4 class="me-3">Total Price: ${{ total_sum }}</h4>
-        <form action="/purchases/api/payment" method="get">
-            <input type="hidden" name="total_sum" value="{{ total_sum }}">
-            <button type="submit" class="btn btn-primary">Proceed to Payment</button>
-        </form>
+    <div class="w-75 mt-3 d-flex justify-content-end">
+        <div class="text-end">
+            <!-- Total Price -->
+            <h4>Total Price: ${{ total_sum }}</h4>
+            <!-- Proceed to Payment Button (below the total price) -->
+            <form action="/purchases/api/payment" method="get">
+                <input type="hidden" name="total_sum" value="{{ total_sum }}">
+                <button type="submit" class="btn btn-primary mt-2">Proceed to Payment</button>
+            </form>
+        </div>
     </div>
     
     

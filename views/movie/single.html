@@ -67,16 +67,18 @@
             </div>
             <div class="col-xl-6 col-lg-6 col-12 d-flex flex-column">
                 <div class="movie-image d-flex justify-content-end align-items-center">
-                    <img alt="{{movie.name}}" class="w-75" loading="lazy" src="https://image.tmdb.org/t/p/w500/{{movie.image_url}}">
+                    <img alt="{{movie.name}}" class="w-75" loading="lazy"
+                         src="https://image.tmdb.org/t/p/w500/{{movie.image_url}}">
                 </div>
             </div>
             <!-- Rental actions -->
 
             <div class="mt-4">
-            {% if 'user_id' in session %}
+                {% if 'user_id' in session %}
                 <!-- Show rental status or option to add to cart -->
                 {% if is_active %}
-                <button aria-disabled="true" class="btn btn-lg w-100 btn-primary px-5 py-3 disabled" role="button">Rented: Expires on
+                <button aria-disabled="true" class="btn btn-lg w-100 btn-primary px-5 py-3 disabled" role="button">
+                    Rented: Expires on
                     {{ rental_expiry.strftime('%d-%m-%Y') }}
                 </button>
                 {% else %}
@@ -86,46 +88,49 @@
                 </form>
                 {% endif %}
                 {% else %}
-                <a aria-disabled="true" class="btn btn-lg w-100 btn-primary px-5 py-3 disabled" role="button">Please log in to
+                <a aria-disabled="true" class="btn btn-lg w-100 btn-primary px-5 py-3 disabled" role="button">Please log
+                    in to
                     rent</a>
-            {% endif %}
+                {% endif %}
             </div>
         </div>
 
-        <div class="mt-5 container full-width d-flex flex-wrap p-0" data-scroll>
+        <div class="mt-5 container full-width d-flex flex-wrap p-0 mb-2" data-scroll>
             <div class="full-width">
                 <h1 class="display-6"><strong>Reviews</strong></h1>
             </div>
-            {% if 'user_id' in session%}
-                {% if not review_exists %}
-                    <div class="full-width mb-3">
-                        <h5><strong>Leave a review</strong></h5>
-                        <form action="/review/api/add" class="form-group review-form" method="post" style="width: 40%">
-                            <input name="movie_id" type="hidden" value="{{movie[0]}}">
-                            <label for="rating">Select a rating:</label>
-                            <select aria-label="rating" class="form-select mb-2" name="rating">
-                                <option value="5">5/5</option>
-                                <option value="4">4/5</option>
-                                <option value="3">3/5</option>
-                                <option value="2">2/5</option>
-                                <option value="1">1/5</option>
-                            </select>
-                            <label for="review">Review:</label>
-                            <textarea aria-label="review" class="form-control mb-2" name="review" required
-                                    rows="3"></textarea>
-                            <button class="btn btn-success" type="submit">Add Review</button>
-                        </form>
-                    </div>
-                {% endif %}
+            {% if 'user_id' in session %}
+            {% if not review_exists %}
+            <div class="full-width mb-3">
+                <h5><strong>Leave a review</strong></h5>
+                <form action="/review/api/add" class="form-group review-form" method="post" style="width: 40%">
+                    <input name="movie_id" type="hidden" value="{{movie[0]}}">
+                    <label for="rating">Select a rating:</label>
+                    <select aria-label="rating" class="form-select mb-2" name="rating">
+                        <option value="5">5/5</option>
+                        <option value="4">4/5</option>
+                        <option value="3">3/5</option>
+                        <option value="2">2/5</option>
+                        <option value="1">1/5</option>
+                    </select>
+                    <label for="review">Review:</label>
+                    <textarea aria-label="review" class="form-control mb-2" name="review" required
+                              rows="3"></textarea>
+                    <button class="btn btn-success" type="submit">Add Review</button>
+                </form>
+            </div>
             {% endif %}
-            <div class="mt-5 container full-width d-flex flex-wrap flex-row p-0" data-scroll>
+            {% endif %}
+            <div class="mt-4 container full-width d-flex flex-wrap flex-row p-0" data-scroll>
+                {% if reviews %}
                 {%for review in reviews %}
                 <div class="col-xl-4 col-l-4 col-s-12 col-12 col-md-6 p-0">
                     <div class="card h-100">
                         <div class="card-body mt-2">
                             {%for i in range(1, review.rating + 1) %}
                             <img alt="star" class="mb-1"
-                                 src="{{url_for('static', filename='/img/star.png') }}" style="width:20px; height: 20px;">
+                                 src="{{url_for('static', filename='/img/star.png') }}"
+                                 style="width:20px; height: 20px;">
                             {%endfor%}
 
                             <p class="card-text">
@@ -145,7 +150,8 @@
                             <form action="{{ url_for('review.delete', id=review.id) }}" method="POST"
                                   style="display:inline;">
                                 <input name="movie_id" type="hidden" value="{{ movie.id }}">
-                                <button class="btn btn-danger mt-2" onclick="return confirm('Are you sure you want to delete this review?');"
+                                <button class="btn btn-danger mt-2"
+                                        onclick="return confirm('Are you sure you want to delete this review?');"
                                         type="submit">Delete
                                     Review
                                 </button>
@@ -155,6 +161,9 @@
                     </div>
                 </div>
                 {%endfor%}
+                {% else %}
+                <h3>No reviews at the moment</h3>
+                {% endif %}
             </div>
         </div>
     </div>
