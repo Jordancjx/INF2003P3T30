@@ -53,6 +53,10 @@
                         <input name="total_sum" type="hidden" value="{{ total_sum }}">
                         <button class="btn btn-primary mt-2 w-100" type="submit">Proceed to Payment</button>
                     </form>
+                    <form action="/orders/api/clear-all" method="post">
+                        <button class="btn btn-danger mt-2 w-100" type="submit">
+                            <i class="fas fa-trash mr-2"></i> Clear cart</button>
+                    </form>
                 </div>
             </div>
         </div>

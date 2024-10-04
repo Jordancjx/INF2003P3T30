@@ -20,6 +20,61 @@
     width: auto;             /* Ensures the width adjusts according to the image's natural ratio */
     height: 60px;            /* Keeps the image height fixed at 60px */
 }
+
+/* Animation */
+
+@keyframes flipInX {
+  from {
+    opacity: 0;
+    transform: perspective(400px) rotate3d(1, 0, 0, 90deg);
+    animation-timing-function: ease-in;
+  }
+
+  40% {
+    transform: perspective(400px) rotate3d(1, 0, 0, -20deg);
+    animation-timing-function: ease-in;
+  }
+
+  60% {
+    opacity: 1;
+    transform: perspective(400px) rotate3d(1, 0, 0, 10deg);
+  }
+
+  80% {
+    transform: perspective(400px) rotate3d(1, 0, 0, -5deg);
+  }
+
+  to {
+    transform: perspective(400px);
+  }
+}
+
+.flipInX {
+  backface-visibility: visible;
+  animation-name: flipInX;
+}
+
+@keyframes flipOutX {
+  from {
+    transform: perspective(400px);
+  }
+
+  30% {
+    opacity: 1;
+    transform: perspective(400px) rotate3d(1, 0, 0, -20deg);
+  }
+
+  to {
+    opacity: 0;
+    transform: perspective(400px) rotate3d(1, 0, 0, 90deg);
+  }
+}
+
+.flipOutX {
+  animation-name: flipOutX;
+  animation-duration: .25s;
+  backface-visibility: visible;
+}
   
   /** Scrolling stuff, just ignore **/
   

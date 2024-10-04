@@ -10,7 +10,6 @@
     <link href="{{ url_for('static', filename='/css/style.css') }}" rel="stylesheet"/>
     <link href="https://use.typekit.net/aqd3znp.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com" rel="preconnect">
-    <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/locomotive-scroll@3.5.4/dist/locomotive-scroll.css" rel="stylesheet">
@@ -47,6 +46,7 @@
     {% include 'partials/_footer.html' %}
     <script src="{{ url_for('static', filename='/js/anime.min.js') }}"></script>
     <script src="{{ url_for('static', filename='/js/jquery-3.7.0.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='/js/datatables.min.js') }}"></script>
     <script src="{{ url_for('static', filename='/js/locomotive.min.js') }}"></script>
 
     {{ toastr.include_toastr_js() }}

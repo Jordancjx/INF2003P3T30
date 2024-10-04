@@ -63,5 +63,20 @@ def remove_movie():
             # Redirect back to the cart page after removal
             return redirect(url_for('user.cart'))  # Replace 'cart_page' with the correct view function name
 
+    flash('Order not found', 'error')
     # If order is not found, redirect to the cart page
     return redirect(url_for('user.cart'))  # Replace 'cart_page' with the correct view function name
+
+
+@orders_bp.route('/api/clear-all', methods=['POST'])
+def clear_all():
+    if 'user_id' in session:
+        user_id = session.get('user_id')
+        db.session.query(Order).filter_by(users_id=user_id).delete()
+        db.session.commit()
+
+        flash('Cart cleared', 'success')
+        return redirect(url_for('user.cart'))
+
+    flash('Please log in', 'error')
+    return redirect(url_for('user.cart'))

@@ -10,6 +10,7 @@ index_bp = Blueprint('index', __name__, template_folder=config.constants.templat
 
 @index_bp.route('/')
 def index():
+    recommendations = None
     searchName = request.args.get("searchName")
     page = request.args.get('page', default=1, type=int)  # Defaults to page 1 if not provided
     per_page = request.args.get('per_page', default=12, type=int)  # Defaults to 10 items per page if not provided
