@@ -53,47 +53,10 @@
         {% endfor %}
         {% else %}
         <div class="text-center">
-            <h5 class="text-light display-4"><strong>You have no rentals at the moment</strong></h5>
+            <h5 class="text-light display-4"><strong>No rentals at the moment</strong></h5>
         </div>
         {% endif %}
     </section>
-
-    <div class="mt-4 d-flex justify-content-center align-items-center"></div>
-        <h1 class="text-light display-4"><strong>RECOMMENDED MOVIES</strong></h1>
-        <section id="recommendedMoviesCarousel" class="carousel slide mt-5" data-bs-ride="carousel">
-            <div class="carousel-inner">
-                {% for group in recommendations|batch(5, fill_with=None) %}
-                <div class="carousel-item {% if loop.index == 1 %}active{% endif %}">
-                    <div class="row justify-content-center">
-                        {% for movie in group %}
-                        <div class="col-lg-2 col-md-2">
-                            {% if movie %}
-                            <!-- Movie Poster -->
-                            <a href="/movie/single/{{ movie.id }}">
-                                <img src="https://image.tmdb.org/t/p/w500/{{ movie.image_url }}" class="d-block" alt="{{ movie.name }}" style="max-width: 200px; height: 300px; object-fit: cover;">
-                            </a>
-                            <!-- Movie Title -->
-                            <div class="text-center">
-                                <h6 class="text-light">{{ movie.name }}</h6>
-                            </div>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-    
-            <button class="carousel-control-prev" type="button" data-bs-target="#recommendedMoviesCarousel" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Previous</span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#recommendedMoviesCarousel" data-bs-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Next</span>
-            </button>
-        </section>
-    </div>
 </section>
 
 {% endblock %}

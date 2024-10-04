@@ -4,25 +4,53 @@
 <section>
     <div class="container mt-5">
         {% if history_items %}
-        <h2 class="text-center">Order History</h2>
-        <table class="table table-striped text-center">
-            <thead>
-                <tr>
-                    <th>Movie Name</th>
-                    <th>Price</th>
-                    <th>Purchase Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for history, purchase_timestamp in history_items %}
-                <tr>
-                    <td>{{ history.movie_name }}</td>
-                    <td>${{ history.price }}</td>
-                    <td>{{ purchase_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="row">
+            <div class="col-12 col-md-9 order-1 order-md-0">
+                <div class="card narrower">
+                    <div
+                        class="view view-cascade narrower py-2 mx-4 mt-2 d-flex justify-content-center align-items-center text-center">
+                        <h2 class="white-text mx-3">Rental History</h2>
+                    </div>
+                    <hr class="w-100" />
+                    <div class="card-body">
+                        <div class="table-responsive table-hover w-100">
+                            <table class="table table-striped text-center">
+                                <thead>
+                                <tr>
+                                    <th class="th-sm">Movie Name</th>
+                                    <th class="th-sm">Price</th>
+                                    <th class="th-sm">Rented on</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for history, purchase_timestamp in history_items %}
+                                <tr class="animated faster">
+                                    <td class="align-middle">{{ history.movie_name }}</td>
+                                    <td class="align-middle">${{ history.price }}</td>
+                                    <td class="align-middle">{{ purchase_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-3 my-4 my-md-0 order-0 order-md-1">
+                <div class="card narrower">
+                    <div class="view view-cascade narrower py-2 mx-4 mt-2 d-flex justify-content-center align-items-center text-center">
+                        <h2 class="white-text mx-3">Action</h2>
+                    </div>
+                    <hr class="w-100"/>
+                    <div class="card-body">
+                        <div class="form-group my-0">
+                            <label for="action-search-input">Search History</label>
+                            <input class="form-control" id="action-search-input" name="search" type="text" placeholder="Search">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         {% else %}
         <h2 class="text-center">No purchase history</h2>
         {% endif %}

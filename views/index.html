@@ -49,6 +49,50 @@
     </div>
     <!-- End of Top Rated Movies Carousel -->
 
+    <!-- Carousel for Recommended Movies -->
+    {% if recommendations %}
+    <div class="container">
+        <h2 class="text-center">Recommended for you</h2>
+        <div class="carousel slide" data-bs-ride="carousel" id="recommendationsCarousel">
+            <div class="carousel-inner">
+                {% for movie in recommendations %}
+                <div class="carousel-item {% if loop.index == 1 %}active{% endif %}">
+                    <div class="container">
+                        <div class="row align-items-center">
+                            <!-- Movie Image on the Left -->
+                            <div class="col-md-4 d-flex justify-content-center align-items-center">
+                                <img alt="{{ movie.name }}" class="d-block w-100" src="https://image.tmdb.org/t/p/w500/{{ movie.image_url }}">
+                            </div>
+
+                            <!-- Movie Details on the Right -->
+                            <div class="col-md-8">
+                                <div class="d-md-block" style="font-size: large;">
+                                    <h1>{{ movie.name }}</h1>
+                                    <p>{{ movie.synopsis }}</p>
+                                    <p>Rating: {{ movie.avg_rating | round(2) }}</p>
+                                    <p>Runtime: {{ movie.runtime }} minutes</p>
+                                    <p>Release Date: {{ movie.release_date }}</p>
+                                    <a href="/movie/single/{{movie.id}}" class="btn btn-primary">View details</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" data-bs-slide="prev" data-bs-target="#recommendationsCarousel" type="button">
+                <span aria-hidden="true" class="carousel-control-prev-icon"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" data-bs-slide="next" data-bs-target="#recommendationsCarousel" type="button">
+                <span aria-hidden="true" class="carousel-control-next-icon"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    </div>
+    {% endif %}
+    <!-- End of Recommended Carousel -->
+
     <div class="container mt-3">
         <div class="d-flex flex-column mb-3">
             <h3>Admin Controls</h3>
