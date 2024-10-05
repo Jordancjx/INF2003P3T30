@@ -11,36 +11,63 @@ index_bp = Blueprint('index', __name__, template_folder=config.constants.templat
 @index_bp.route('/')
 def index():
     recommendations = None
-    searchName = request.args.get("searchName")
+    searchQuery = request.args.get("searchName")
     page = request.args.get('page', default=1, type=int)  # Defaults to page 1 if not provided
     per_page = request.args.get('per_page', default=12, type=int)  # Defaults to 10 items per page if not provided
     
     with current_app.app_context():
-        if searchName:
-            total_sql = text("SELECT COUNT(*) FROM movies WHERE name LIKE :name")
-            total_result = db.session.execute(total_sql, {"name": f"%{searchName}%"})
+        if 'user_id' in session:
+            user_id = session['user_id']
+        else:
+            user_id = None
+            
+        if searchQuery:
+            # Search in name, genre, or language
+            total_sql = text("""
+                SELECT COUNT(*) 
+                FROM movies 
+                WHERE name LIKE :query
+                OR genre LIKE :query
+                OR language LIKE :query
+            """)
+            total_result = db.session.execute(total_sql, {"query": f"%{searchQuery}%"})
             total_movies = total_result.scalar()  # Get the total number of movies
             
             sql = text("""
-                SELECT * FROM movies 
-                WHERE name LIKE :name
+                SELECT m.*, 
+                       CASE 
+                           WHEN o.movie_id IS NOT NULL THEN 1 
+                           ELSE 0 
+                       END AS in_cart
+                FROM movies m
+                LEFT JOIN orders o ON m.id = o.movie_id AND o.users_id = :user_id
+                WHERE m.name LIKE :query
+                OR m.language LIKE :query
                 LIMIT :limit OFFSET :offset
             """)
             result = db.session.execute(sql, {
-                "name": f"%{searchName}%",
+                "query": f"%{searchQuery}%",
+                "user_id": user_id,
                 "limit": per_page,
                 "offset": (page - 1) * per_page
             })
         else:
-            # Count total movies (for pagination)
             total_sql = text("SELECT COUNT(*) FROM movies")
             total_result = db.session.execute(total_sql)
             total_movies = total_result.scalar()  # Get the total number of movies
+            
             sql = text("""
-                SELECT * FROM movies 
+                SELECT m.*, 
+                       CASE 
+                           WHEN o.movie_id IS NOT NULL THEN 1 
+                           ELSE 0 
+                       END AS in_cart
+                FROM movies m
+                LEFT JOIN orders o ON m.id = o.movie_id AND o.users_id = :user_id
                 LIMIT :limit OFFSET :offset
             """)
             result = db.session.execute(sql, {
+                "user_id": user_id,
                 "limit": per_page,
                 "offset": (page - 1) * per_page  # Calculate the offset based on page number
             })
