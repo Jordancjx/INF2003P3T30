@@ -161,6 +161,7 @@ def update_profile():
     lname = request.form.get('lname')
     email = request.form.get('email')
     password = request.form.get('password')
+    old_password = request.form.get('old_password')
 
     profile_pic_url = None
     if 'profile_pic' in request.files:
@@ -188,6 +189,14 @@ def update_profile():
                 params["profile_pic_url"] = profile_pic_url
 
             if password:
+                stored_password_sql = text("SELECT password FROM users WHERE id = :user_id")
+                stored_password_result = db.session.execute(stored_password_sql, {"user_id": user_id})
+                stored_password = stored_password_result.scalar()
+
+                if not check_password_hash(stored_password, old_password):
+                    flash('Incorrect old password', 'error')
+                    return redirect(url_for('user.getProfile'))
+
                 hashed_password = generate_password_hash(password)
                 updatesql += ", password = :password"
                 params["password"] = hashed_password
