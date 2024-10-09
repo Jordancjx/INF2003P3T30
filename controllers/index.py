@@ -35,10 +35,20 @@ def index():
             
             sql = text("""
                 SELECT m.*, 
-                       CASE 
-                           WHEN o.movie_id IS NOT NULL THEN 1 
-                           ELSE 0 
-                       END AS in_cart
+                    CASE 
+                        WHEN o.movie_id IS NOT NULL THEN 1 
+                        ELSE 0 
+                    END AS in_cart, 
+                    CASE 
+                        WHEN EXISTS (
+                            SELECT 1 
+                            FROM history h 
+                            INNER JOIN purchases p ON p.id = h.purchase_id 
+                            WHERE h.movie_id = m.id 
+                            AND p.users_id = :user_id
+                        ) THEN 1 
+                        ELSE 0 
+                    END AS is_rented
                 FROM movies m
                 LEFT JOIN orders o ON m.id = o.movie_id AND o.users_id = :user_id
                 WHERE m.name LIKE :query
@@ -58,10 +68,20 @@ def index():
             
             sql = text("""
                 SELECT m.*, 
-                       CASE 
-                           WHEN o.movie_id IS NOT NULL THEN 1 
-                           ELSE 0 
-                       END AS in_cart
+                    CASE 
+                        WHEN o.movie_id IS NOT NULL THEN 1 
+                        ELSE 0 
+                    END AS in_cart, 
+                    CASE 
+                        WHEN EXISTS (
+                            SELECT 1 
+                            FROM history h 
+                            INNER JOIN purchases p ON p.id = h.purchase_id 
+                            WHERE h.movie_id = m.id 
+                            AND p.users_id = :user_id
+                        ) THEN 1 
+                        ELSE 0 
+                    END AS is_rented
                 FROM movies m
                 LEFT JOIN orders o ON m.id = o.movie_id AND o.users_id = :user_id
                 LIMIT :limit OFFSET :offset

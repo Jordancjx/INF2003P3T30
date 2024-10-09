@@ -49,11 +49,10 @@ def single(id):
 
             # Fetch movie details
             sql = text("""
-                        SELECT m.*, 
-                        p.purchase_timestamp AS rental_date 
-                        FROM movies m 
-                        LEFT JOIN purchases p ON p.users_id = :user_id
-                        LEFT JOIN history h ON h.purchase_id = p.id AND h.movie_id = m.id
+                        SELECT m.*, p.purchase_timestamp AS rental_date 
+                        FROM movies m
+                        LEFT JOIN history h ON h.movie_id = m.id
+                        LEFT JOIN purchases p ON p.id = h.purchase_id AND p.users_id = :user_id
                         WHERE m.id = :movie_id
                     """)
             movie_result = db.session.execute(sql, {"movie_id": id, 'user_id': user_id})
