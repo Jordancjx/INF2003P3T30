@@ -194,6 +194,7 @@ def update_movie(id):
 @movies_bp.route('/api/delete/<int:id>', methods=['POST'])
 def delete_movie(id):
     with current_app.app_context():
+        print(id)
         sql = text("SELECT * FROM movies WHERE id = :id")
         result = db.session.execute(sql, {"id": id})
         movie = result.fetchone()
@@ -203,7 +204,7 @@ def delete_movie(id):
             return redirect(url_for('index.index'))
 
         sql = text('DELETE from movies WHERE id = :id')
-        db.session.execute(sql, {'id', id})
+        db.session.execute(sql, {'id': id})
         db.session.commit()
 
         flash('Movie deleted successfully!', 'success')
