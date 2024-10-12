@@ -98,12 +98,11 @@
             <h3>Admin Controls</h3>
             <div>
                 {% if 'user_id' in session and 'admin' in session %}
-                    <a class="btn btn-primary" href="/movie/add">Add Movie</a>
-                {% else %}
                     <form action="{{ url_for('movie.add') }}" method="GET">
                         <button type="submit" class="btn btn-primary">Add Movie</button>
                     </form>
                 {% endif %}
+                
             </div>
         </div>
         <form action="/movie/search" autocomplete="off" class="mb-3 d-flex align-items-center" method="post">

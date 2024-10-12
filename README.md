@@ -12,4 +12,9 @@ and place the CSV file in the 'data' folder.
 
 Rename it to 'TMDB_dataset.csv'
 
+Admin Account
+Username: admin
+Email: admin@admin.com 
+Password: admin
+
 Run app.py

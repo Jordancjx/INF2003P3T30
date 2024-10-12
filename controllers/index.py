@@ -147,6 +147,7 @@ def index():
                            movies=movies, 
                            page=page, 
                            per_page=per_page, 
+                           searchName=searchQuery,
                            total_pages=total_pages,
                            display_range=display_range,
                            top_movies=top_movies, recommendations=recommendations)
