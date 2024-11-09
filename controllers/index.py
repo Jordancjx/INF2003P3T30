@@ -1,147 +1,105 @@
 from flask import Blueprint, render_template, request, redirect, url_for, current_app, session
 import config.constants
-from sqlalchemy import text
-from models.movie import Movie
-from config.dbConnect import db
 
 index_bp = Blueprint('index', __name__, template_folder=config.constants.template_dir,
                      static_folder=config.constants.static_dir, static_url_path='/public', url_prefix='/')
-
 
 @index_bp.route('/')
 def index():
     recommendations = None
     searchQuery = request.args.get("searchName")
     page = request.args.get('page', default=1, type=int)  # Defaults to page 1 if not provided
-    per_page = request.args.get('per_page', default=12, type=int)  # Defaults to 10 items per page if not provided
+    per_page = request.args.get('per_page', default=12, type=int)  # Defaults to 12 items per page if not provided
     
-    with current_app.app_context():
-        if 'user_id' in session:
-            user_id = session['user_id']
-        else:
-            user_id = None
-            
-        if searchQuery:
-            # Search in name, genre, or language
-            total_sql = text("""
-                SELECT COUNT(*) 
-                FROM movies 
-                WHERE name LIKE :query
-                OR genre LIKE :query
-                OR language LIKE :query
-            """)
-            total_result = db.session.execute(total_sql, {"query": f"%{searchQuery}%"})
-            total_movies = total_result.scalar()  # Get the total number of movies
-            
-            sql = text("""
-                SELECT m.*, 
-                    CASE 
-                        WHEN o.movie_id IS NOT NULL THEN 1 
-                        ELSE 0 
-                    END AS in_cart, 
-                    CASE 
-                        WHEN EXISTS (
-                            SELECT 1 
-                            FROM history h 
-                            INNER JOIN purchases p ON p.id = h.purchase_id 
-                            WHERE h.movie_id = m.id 
-                            AND p.users_id = :user_id
-                        ) THEN 1 
-                        ELSE 0 
-                    END AS is_rented
-                FROM movies m
-                LEFT JOIN orders o ON m.id = o.movie_id AND o.users_id = :user_id
-                WHERE m.name LIKE :query
-                OR m.language LIKE :query
-                LIMIT :limit OFFSET :offset
-            """)
-            result = db.session.execute(sql, {
-                "query": f"%{searchQuery}%",
-                "user_id": user_id,
-                "limit": per_page,
-                "offset": (page - 1) * per_page
-            })
-        else:
-            total_sql = text("SELECT COUNT(*) FROM movies")
-            total_result = db.session.execute(total_sql)
-            total_movies = total_result.scalar()  # Get the total number of movies
-            
-            sql = text("""
-                SELECT m.*, 
-                    CASE 
-                        WHEN o.movie_id IS NOT NULL THEN 1 
-                        ELSE 0 
-                    END AS in_cart, 
-                    CASE 
-                        WHEN EXISTS (
-                            SELECT 1 
-                            FROM history h 
-                            INNER JOIN purchases p ON p.id = h.purchase_id 
-                            WHERE h.movie_id = m.id 
-                            AND p.users_id = :user_id
-                        ) THEN 1 
-                        ELSE 0 
-                    END AS is_rented
-                FROM movies m
-                LEFT JOIN orders o ON m.id = o.movie_id AND o.users_id = :user_id
-                LIMIT :limit OFFSET :offset
-            """)
-            result = db.session.execute(sql, {
-                "user_id": user_id,
-                "limit": per_page,
-                "offset": (page - 1) * per_page  # Calculate the offset based on page number
-            })
-            
-        movies = result.fetchall()
+    db = current_app.mongo.db
+    user_id = session.get('user_id')
+    
+    # Conditional filter for search criteria
+    query_filter = {}
+    if searchQuery:
+        # Apply search filter if searchQuery is not empty
+        query_filter = {
+            "$or": [
+                {"title": {"$regex": searchQuery, "$options": "i"}},
+                {"genres": {"$regex": searchQuery, "$options": "i"}},
+                {"spoken_languages": {"$regex": searchQuery, "$options": "i"}}
+            ]
+        }
         
-        total_pages = (total_movies + per_page - 1) // per_page  # Total pages logic
-        display_range = range(max(1, page - 14), min(total_pages + 1, page + 15))
+    # Fetch total number of matching movies
+    total_movies = db.Movies.count_documents(query_filter)
+    
+    # Pagination logic
+    movies_cursor = db.Movies.find(query_filter).skip((page - 1) * per_page).limit(per_page)
+    movies = list(movies_cursor)
+    
+    # Add fields `in_cart` and `is_rented` to each movie based on the user's history
+    # for movie in movies:
+    #     movie['in_cart'] = db.orders.find_one({"movie_id": movie["_id"], "user_id": ObjectId(user_id)}) is not None
+    #     movie['is_rented'] = db.history.find_one({"movie_id": movie["_id"], "user_id": ObjectId(user_id)}) is not None
+
+    # Total pages calculation
+    total_pages = (total_movies + per_page - 1) // per_page
+    display_range = range(max(1, page - 14), min(total_pages + 1, page + 15))
 
     # Fetch top-rated movies for the carousel
-    with current_app.app_context():
-        top_rated_sql = text("""
-            SELECT m.*, COALESCE(AVG(r.rating), 0) as avg_rating
-            FROM movies m
-            LEFT JOIN reviews r ON m.id = r.movies_id
-            GROUP BY m.id
-            ORDER BY avg_rating DESC
-            LIMIT 5;
-        """)
-        top_rated_result = db.session.execute(top_rated_sql)
-        top_movies = top_rated_result.fetchall()
+    top_movies_cursor = db.movies.aggregate([
+        {"$lookup": {
+            "from": "reviews",
+            "localField": "_id",
+            "foreignField": "movies_id",
+            "as": "reviews"
+        }},
+        {"$addFields": {
+            "avg_rating": {"$avg": "$reviews.rating"}
+        }},
+        {"$sort": {"avg_rating": -1}},
+        {"$limit": 5}
+    ])
+    top_movies = list(top_movies_cursor)
 
-    if 'user_id' in session:
-        user_id = session['user_id']
-        with current_app.app_context():
-            # Fetch user's most watched genre and recommend unwatched movies from user's most watched genre
-            recommendation_sql = text("""
-                WITH most_watched_genre AS (
-                    SELECT m.genre, COUNT(m.id) AS genre_count
-                    FROM movies m
-                    INNER JOIN history h ON h.movie_id = m.id
-                    INNER JOIN purchases p ON h.purchase_id = p.id
-                    WHERE p.users_id = :user_id
-                    GROUP BY m.genre
-                    ORDER BY genre_count DESC
-                    LIMIT 1
-                )
-                SELECT m.*, COALESCE(AVG(r.rating), 0) as avg_rating
-                FROM movies m
-                LEFT JOIN reviews r ON m.id = r.movies_id
-                WHERE m.image_url IS NOT NULL AND m.genre IN (
-                    SELECT genre FROM most_watched_genre
-                )
-                AND m.id NOT IN (
-                    SELECT h.movie_id
-                    FROM history h
-                    INNER JOIN purchases p ON h.purchase_id = p.id
-                    WHERE p.users_id = :user_id
-                )
-                GROUP BY m.id
-                LIMIT 30;
-            """)
-            result = db.session.execute(recommendation_sql, {"user_id": user_id})
-            recommendations = result.fetchall()
+    # Personalized recommendations based on user's most-watched genre
+    # if user_id:
+    #     # Find user's most-watched genre
+    #     most_watched_genre = db.history.aggregate([
+    #         {"$match": {"user_id": ObjectId(user_id)}},
+    #         {"$lookup": {
+    #             "from": "movies",
+    #             "localField": "movie_id",
+    #             "foreignField": "_id",
+    #             "as": "movie"
+    #         }},
+    #         {"$unwind": "$movie"},
+    #         {"$group": {
+    #             "_id": "$movie.genre",
+    #             "count": {"$sum": 1}
+    #         }},
+    #         {"$sort": {"count": DESCENDING}},
+    #         {"$limit": 1}
+    #     ])
+    #     most_watched_genre = list(most_watched_genre)
+        
+    #     if most_watched_genre:
+    #         genre = most_watched_genre[0]["_id"]
+    #         recommendations_cursor = db.movies.aggregate([
+    #             {"$match": {
+    #                 "genre": genre,
+    #                 "_id": {"$nin": [history["movie_id"] for history in db.history.find({"user_id": ObjectId(user_id)})]}
+    #             }},
+    #             {"$lookup": {
+    #                 "from": "reviews",
+    #                 "localField": "_id",
+    #                 "foreignField": "movies_id",
+    #                 "as": "reviews"
+    #             }},
+    #             {"$addFields": {
+    #                 "avg_rating": {"$avg": "$reviews.rating"}
+    #             }},
+    #             {"$sort": {"avg_rating": DESCENDING}},
+    #             {"$limit": 30}
+    #         ])
+    #         recommendations = list(recommendations_cursor)
+
 
     return render_template('index.html', 
                            movies=movies, 
@@ -151,3 +109,5 @@ def index():
                            total_pages=total_pages,
                            display_range=display_range,
                            top_movies=top_movies, recommendations=recommendations)
+
+    return render_template('index.html')

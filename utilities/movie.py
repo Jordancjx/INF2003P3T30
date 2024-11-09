@@ -7,7 +7,7 @@ from config.dbConnect import db
 
 TMDB_BASE_URL = "https://api.themoviedb.org/3/movie/"
 IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
-DF_SIZE = 10000
+DF_SIZE = 2000
 CHUNK_SIZE = 1000
 
 

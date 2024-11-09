@@ -3,6 +3,9 @@ from sqlalchemy import text
 import config.constants
 from config.dbConnect import db
 from models.review import Review
+from controllers.user import user_bp
+from controllers.movie import movies_bp
+from bson import ObjectId
 
 reviews_bp = Blueprint('review', __name__, template_folder=config.constants.template_dir,
                        static_folder=config.constants.static_dir, static_url_path='/public', url_prefix='/review')
@@ -14,34 +17,42 @@ def add():
     rating = int(request.form.get('rating'))
     movies_id = request.form.get('movie_id')
     users_id = session.get('user_id')
-
+    print(movies_id)
+    db = current_app.mongo.db
+    
+    review = {
+        "body": body,
+        "rating": rating,
+        "movies_id" : ObjectId(request.form.get('movie_id')),
+        "users_id": ObjectId(session.get('user_id'))
+    }
+    
+    if not users_id:
+        flash("Please log in to post a review", "error")
+        return redirect(url_for(user_bp.login))
+    
     with current_app.app_context():
         try:
-            insertsql = text(
-                "INSERT INTO reviews (body, rating, movies_id, users_id) "
-                "VALUES (:body, :rating, :movies_id, :users_id)")
-            db.session.execute(insertsql,
-                               {"body": body, "rating": rating, "movies_id": movies_id, "users_id": users_id})
-
-            db.session.commit()
+            db.reviews.insert_one(review)
             flash('Review posted successfully!')
             return redirect(url_for('movie.single', id=movies_id))
 
         except Exception as e:
-            db.session.rollback()
             flash("An error has occurred", "error")
             return redirect(url_for('movie.single', id=movies_id))
 
 
-@reviews_bp.route('/edit/<int:id>', methods=['GET'])
+@reviews_bp.route('/edit/<string:id>', methods=['GET'])
 def edit(id):
     users_id = session.get('user_id')  # Get the current user ID
-
+    print(id)
     with current_app.app_context():
-        sql = text("SELECT * FROM reviews WHERE id = :id AND users_id = :users_id")
-        result = db.session.execute(sql, {"id": id, "users_id": users_id})
-        review = result.fetchone()
-
+        db = current_app.mongo.db
+        review = db.reviews.find_one(
+            {"_id": ObjectId(id), "users_id": ObjectId(users_id)},  # Filter by both _id and user_id
+            {"body": 1, "rating": 1, "movies_id": 1, "users_id": 1}  # Fields to return
+        )
+        print(review)
         if review is None:
             flash('Review not found or you do not have the permission to edit', 'error')
             return redirect(url_for('index.index'))
@@ -49,28 +60,27 @@ def edit(id):
         return render_template('review/edit.html', review=review)
 
 
-@reviews_bp.route('/edit/<int:id>', methods=['POST'])
-def update(id):
+@reviews_bp.route('/api/update', methods=['POST'])
+def update():
     body = request.form.get('review')
     rating = int(request.form.get('rating'))
-    movie_id = request.form.get('movie_id')
-    users_id = session.get('user_id')  # Get the current user ID
-
+    movie_id = ObjectId(request.form.get('movie_id'))
+    users_id = ObjectId(session.get('user_id'))  # Get the current user ID
+    review_id = ObjectId(request.form.get('review_id'))
     with current_app.app_context():
         try:
-            review_sql = text("""
-                        SELECT * FROM reviews WHERE id = :review_id AND users_id = :user_id
-                    """)
-            review_result = db.session.execute(review_sql, {"review_id": id, "user_id": users_id})
-            review = review_result.fetchone()
+            db = current_app.mongo.db
+            
+            review = db.reviews.find_one({"_id": review_id, "users_id": users_id})
 
             if review is None:
                 flash("You do not have permission to edit this review.", "error")
                 return redirect(url_for('movie.single', id=movie_id))
 
-            sql = text("UPDATE reviews SET body = :body, rating = :rating WHERE id = :id AND users_id = :users_id")
-            db.session.execute(sql, {"body": body, "rating": rating, "id": id, "users_id": users_id})
-            db.session.commit()
+            db.reviews.update_one(
+                {"_id": review_id},  # Find the review by ID
+                {"$set": {"body": body, "rating": rating}}  # Set new body and rating
+            )
 
             flash('Review updated successfully!')
             return redirect(url_for('movie.single', id=movie_id))
@@ -81,30 +91,26 @@ def update(id):
             return redirect(url_for('movie.single', id=movie_id))
 
 
-@reviews_bp.route('/delete/<int:id>', methods=['POST'])
+@reviews_bp.route('/api/delete/<string:id>', methods=['POST'])
 def delete(id):
-    users_id = session.get('user_id')  # Get the current user ID
-
+    users_id = ObjectId(session.get('user_id'))  # Get the current user ID
+    review_id = ObjectId(id)
+    movie_id = request.form.get('movie_id')
+    
     with current_app.app_context():
         try:
-            review_sql = text("""
-                                    SELECT * FROM reviews WHERE id = :review_id AND users_id = :user_id
-                                """)
-            review_result = db.session.execute(review_sql, {"review_id": id, "user_id": users_id})
-            review = review_result.fetchone()
-
-            if review:
+            db = current_app.mongo.db
+            
+            review = db.reviews.find_one({"_id": review_id, "users_id": users_id})
+            if not review:
                 flash("You do not have permission to edit this review.", "error")
-                return redirect(url_for('movie.single', id=id))
+                return redirect(url_for('movie.single', id=movie_id))
 
-            sql = text("DELETE FROM reviews WHERE id = :id AND users_id = :users_id")
-            db.session.execute(sql, {"id": id, "users_id": users_id})
-            db.session.commit()
+            db.reviews.delete_one({"_id": review_id, "users_id": users_id})
 
             flash('Review deleted successfully!')
-            return redirect(url_for('movie.single', id=request.form.get('movie_id')))
+            return redirect(url_for('movie.single', id=movie_id))
 
         except Exception as e:
-            db.session.rollback()
             flash("An error occurred while updating the review", "error")
-            return redirect(url_for('movie.single', id=request.form.get('movie_id')))
+            return redirect(url_for('movie.single', id=movie_id))

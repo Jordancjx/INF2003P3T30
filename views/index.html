@@ -1,269 +1,269 @@
-{% extends "layouts/base.html" %}
-{% block body %}
-
 <section data-scroll-section>
-
-    <div class="mt-2 d-flex justify-content-center align-items-center">
-        <h1 class="text-light display-4"><strong>MOVIES</strong></h1>
-    </div>
-
-    <!-- Carousel for Top Rated Movies -->
-    <div class="container mt-3">
-        <h2 class="text-center">Top Rated Movies</h2>
-        <div class="carousel slide" data-bs-ride="carousel" id="topRatedCarousel">
-            <div class="carousel-inner">
-                {% for movie in top_movies %}
-                <div class="carousel-item {% if loop.index == 1 %}active{% endif %}">
-                    <div class="container">
-                        <div class="row align-items-center">
-                            <!-- Movie Image on the Left -->
-                            <div class="col-md-4 d-flex justify-content-center align-items-center">
-                                <img alt="{{ movie.name }}" class="d-block w-100" src="https://image.tmdb.org/t/p/w500/{{ movie.image_url }}">
-                            </div>
-
-                            <!-- Movie Details on the Right -->
-                            <div class="col-md-8">
-                                <div class="d-md-block" style="font-size: large;">
-                                    <h1>{{ movie.name }}</h1>
-                                    <p>{{ movie.synopsis }}</p>
-                                    <p>Rating: {{ movie.avg_rating | round(2) }}</p>
-                                    <p>Runtime: {{ movie.runtime }} minutes</p>
-                                    <p>Release Date: {{ movie.release_date }}</p>
-                                    <a href="/movie/single/{{movie.id}}" class="btn btn-primary">View details</a>
+    {% extends "layouts/base.html" %}
+    {% block body %}
+    
+    <section data-scroll-section>
+    
+        <div class="mt-2 d-flex justify-content-center align-items-center">
+            <h1 class="text-light display-4"><strong>MOVIES</strong></h1>
+        </div>
+    
+        <!-- Carousel for Top Rated Movies -->
+        <!-- <div class="container mt-3">
+            <h2 class="text-center">Top Rated Movies</h2>
+            <div class="carousel slide" data-bs-ride="carousel" id="topRatedCarousel">
+                <div class="carousel-inner">
+                    {% for movie in top_movies %}
+                    <div class="carousel-item {% if loop.index == 1 %}active{% endif %}">
+                        <div class="container">
+                            <div class="row align-items-center">
+                                <!-- Movie Image on the Left -->
+                                <div class="col-md-4 d-flex justify-content-center align-items-center">
+                                    <img alt="{{ movie.name }}" class="d-block w-100" src="https://image.tmdb.org/t/p/w500/{{ movie.image_url }}">
+                                </div>
+    
+                                <!-- Movie Details on the Right
+                                <div class="col-md-8">
+                                    <div class="d-md-block" style="font-size: large;">
+                                        <h1>{{ movie.name }}</h1>
+                                        <p>{{ movie.synopsis }}</p>
+                                        <p>Rating: {{ movie.avg_rating | round(2) }}</p>
+                                        <p>Runtime: {{ movie.runtime }} minutes</p>
+                                        <p>Release Date: {{ movie.release_date }}</p>
+                                        <a href="/movie/single/{{movie.id}}" class="btn btn-primary">View details</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                {% endfor %}
-            </div>
-            <button class="carousel-control-prev" data-bs-slide="prev" data-bs-target="#topRatedCarousel" type="button">
-                <span aria-hidden="true" class="carousel-control-prev-icon"></span>
-                <span class="visually-hidden">Previous</span>
-            </button>
-            <button class="carousel-control-next" data-bs-slide="next" data-bs-target="#topRatedCarousel" type="button">
-                <span aria-hidden="true" class="carousel-control-next-icon"></span>
-                <span class="visually-hidden">Next</span>
-            </button>
-        </div>
-    </div>
-    <!-- End of Top Rated Movies Carousel -->
-
-    <!-- Carousel for Recommended Movies -->
-    {% if recommendations %}
-    <div class="container">
-        <h2 class="text-center">Recommended for you</h2>
-        <div class="carousel slide" data-bs-ride="carousel" id="recommendationsCarousel">
-            <div class="carousel-inner">
-                {% for movie in recommendations %}
-                <div class="carousel-item {% if loop.index == 1 %}active{% endif %}">
-                    <div class="container">
-                        <div class="row align-items-center">
-                            <!-- Movie Image on the Left -->
-                            <div class="col-md-4 d-flex justify-content-center align-items-center">
-                                <img alt="{{ movie.name }}" class="d-block w-100" src="https://image.tmdb.org/t/p/w500/{{ movie.image_url }}">
-                            </div>
-
-                            <!-- Movie Details on the Right -->
-                            <div class="col-md-8">
-                                <div class="d-md-block" style="font-size: large;">
-                                    <h1>{{ movie.name }}</h1>
-                                    <p>{{ movie.synopsis }}</p>
-                                    <p>Rating: {{ movie.avg_rating | round(2) }}</p>
-                                    <p>Runtime: {{ movie.runtime }} minutes</p>
-                                    <p>Release Date: {{ movie.release_date }}</p>
-                                    <a href="/movie/single/{{movie.id}}" class="btn btn-primary">View details</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            <button class="carousel-control-prev" data-bs-slide="prev" data-bs-target="#recommendationsCarousel" type="button">
-                <span aria-hidden="true" class="carousel-control-prev-icon"></span>
-                <span class="visually-hidden">Previous</span>
-            </button>
-            <button class="carousel-control-next" data-bs-slide="next" data-bs-target="#recommendationsCarousel" type="button">
-                <span aria-hidden="true" class="carousel-control-next-icon"></span>
-                <span class="visually-hidden">Next</span>
-            </button>
-        </div>
-    </div>
-    {% endif %}
-    <!-- End of Recommended Carousel -->
-
-    <div class="container mt-3">
-        <div class="d-flex flex-column mb-3">
-            <h3>Admin Controls</h3>
-            <div>
-                {% if 'user_id' in session and 'admin' in session %}
-                    <form action="{{ url_for('movie.add') }}" method="GET">
-                        <button type="submit" class="btn btn-primary">Add Movie</button>
-                    </form>
-                {% endif %}
-                
-            </div>
-        </div>
-        <form action="/movie/search" autocomplete="off" class="mb-3 d-flex align-items-center" method="post">
-            <div class="autocomplete" style="width:300px;">
-                <input class="form-control" id="myInput" name="searchName" placeholder="Movie Name, Genre or Language" type="text">
-            </div>
-            <button class="ms-2 btn btn-info text-white" type="submit">Search</button>
-        </form>
-    </div>
-
-    <section class="container d-flex p-2 flex-wrap" data-scroll id="movieSection">
-        {% for movie in movies %}
-        <div class="col-xl-4 col-l-4 col-sm-12 col-12 col-md-6 p-1 mb-4 d-flex align-items-stretch mt-4">
-            <div class="card w-100">
-                {% if 'user_id' in session and 'admin' in session %}
-                <div class="dropdown">
-                    <button class="btn btn-info dropdown-toggle text-white w-100" data-bs-toggle="dropdown"
-                            type="button">
-                        Admin Controls
-                    </button>
-                    <ul class="dropdown-menu w-100">
-                        <li>
-                            <a class="dropdown-item text-success" href="/movie/update/{{movie.id}}">
-                                <i class="fas fa-edit mr-2"></i> Update movie</a>
-                        </li>
-                        <li>
-                            <form action="{{url_for('movie.delete_movie', id=movie.id)}}" class="d-inline"
-                                  method="POST">
-                                <button class="dropdown-item text-danger" type="submit">
-                                    <i class="fas fa-trash mr-2"></i> Delete Movie
-                                </button>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
-                {%endif%}
-                <div class="view overlay border-bottom">
-                    <img alt="{{movie.name}}" class="card-img-top" loading="lazy" src="https://image.tmdb.org/t/p/w500/{{movie.image_url}}">
-                </div>
-                <div class="card-body d-flex flex-column">
-                    <div>
-                        <h2 class="card-title">
-                            {{ movie.name }}
-                        </h2>
-                        <hr class="w-100"/>
-
-                        <p class="card-text mb-0">
-                            {{ movie.synopsis }}
-                        </p>
-
-                        <hr class="w-100"/>
-                        <div class="row mt-2">
-                            <div class="col text-start">
-                                <p>
-                                    <i class="fas fa-calendar mr-2"></i> {{movie.release_date}}
-                                </p>
-                            </div>
-                            <div class="col text-end">
-                                <p class="card-text"><i class="fas fa-clock mr-2"></i>
-                                    {{movie.runtime}} minutes
-                            </div>
-                            <div class="w-100">
-                                <p>
-                                    Available in: {{movie.language}}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row m-2">
-                    <div class="col text-start">
-                        <!-- Create a form that submits to the add orders route -->
-                        <form action="/orders/api/add" method="POST">
-                            {% if movie.is_rented == 1 %}
-                                <input name="movie_id" type="hidden" value="{{ movie.id }}">
-                                <button class="btn btn-primary" type="submit" disabled>
-                                    Already Rented
-                                </button>
-                            {% elif movie.in_cart == 0 %}
-                                <input name="movie_id" type="hidden" value="{{ movie.id }}">
-                                <button class="btn btn-primary" type="submit">
-                                    Add to Cart
-                                </button>
-                            {%else%}
-                                <button class="btn btn-primary" type="submit" disabled>
-                                    Already in cart
-                                </button>
-                            {%endif%}
-                        </form>
-                    </div>
-                    <div class="col text-end">
-                        <a class="btn btn-primary" href="/movie/single/{{movie.id}}">
-                            View movie details</a>
-                    </div>
-                </div>
-                <div class="card-footer text-center mt-2">
-                    <h5 class="m-0">$
-                        {{movie.price}}
-                    </h5>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-
-        <div class="w-100 d-flex justify-content-center align-items-center">
-            <nav aria-label="Page navigation">
-                <ul class="pagination">
-                    {% if page > 1 %}
-                    <li class="page-item">
-                        <a class="page-link"
-                           href="/?page={{ page - 1 }}&per_page={{ per_page }}{% if searchName %}&searchName={{ searchName }}{% endif %}">
-                            Previous
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    <!-- Always show the first page -->
-                    {% if page > 3 %}
-                    <li class="page-item">
-                        <a class="page-link"
-                           href="/?page=1&per_page={{ per_page }}{% if searchName %}&searchName={{ searchName }}{% endif %}">1</a>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link">...</span>
-                    </li>
-                    {% endif %}
-
-                    <!-- Show the calculated range of pages around the current page -->
-                    {% for p in display_range %}
-                    <li class="page-item {% if page == p %}active{% endif %}">
-                        <a class="page-link"
-                           href="/?page={{ p }}&per_page={{ per_page }}{% if searchName %}&searchName={{ searchName }}{% endif %}">
-                            {{ p }}
-                        </a>
-                    </li>
                     {% endfor %}
-
-                    <!-- Always show the last page -->
-                    {% if page < total_pages - 2 %}
-                    <li class="page-item disabled">
-                        <span class="page-link">...</span>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link"
-                           href="/?page={{ total_pages }}&per_page={{ per_page }}{% if searchName %}&searchName={{ searchName }}{% endif %}">{{
-                            total_pages }}</a>
-                    </li>
-                    {% endif %}
-
-                    {% if page < total_pages %}
-                    <li class="page-item">
-                        <a class="page-link"
-                           href="/?page={{ page + 1 }}&per_page={{ per_page }}{% if searchName %}&searchName={{ searchName }}{% endif %}">
-                            Next
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
+                </div>
+                <button class="carousel-control-prev" data-bs-slide="prev" data-bs-target="#topRatedCarousel" type="button">
+                    <span aria-hidden="true" class="carousel-control-prev-icon"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" data-bs-slide="next" data-bs-target="#topRatedCarousel" type="button">
+                    <span aria-hidden="true" class="carousel-control-next-icon"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        </div> --> 
+        <!-- End of Top Rated Movies Carousel -->
+    
+        <!-- Carousel for Recommended Movies
+        {% if recommendations %}
+        <div class="container">
+            <h2 class="text-center">Recommended for you</h2>
+            <div class="carousel slide" data-bs-ride="carousel" id="recommendationsCarousel">
+                <div class="carousel-inner">
+                    {% for movie in recommendations %}
+                    <div class="carousel-item {% if loop.index == 1 %}active{% endif %}">
+                        <div class="container">
+                            <div class="row align-items-center">
+                                <!-- Movie Image on the Left -->
+                                <div class="col-md-4 d-flex justify-content-center align-items-center">
+                                    <img alt="{{ movie.name }}" class="d-block w-100" src="https://image.tmdb.org/t/p/w500/{{ movie.image_url }}">
+                                </div>
+    
+                                <!-- Movie Details on the Right -->
+                                <div class="col-md-8">
+                                    <div class="d-md-block" style="font-size: large;">
+                                        <h1>{{ movie.name }}</h1>
+                                        <p>{{ movie.synopsis }}</p>
+                                        <p>Rating: {{ movie.avg_rating | round(2) }}</p>
+                                        <p>Runtime: {{ movie.runtime }} minutes</p>
+                                        <p>Release Date: {{ movie.release_date }}</p>
+                                        <a href="/movie/single/{{movie.id}}" class="btn btn-primary">View details</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button class="carousel-control-prev" data-bs-slide="prev" data-bs-target="#recommendationsCarousel" type="button">
+                    <span aria-hidden="true" class="carousel-control-prev-icon"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" data-bs-slide="next" data-bs-target="#recommendationsCarousel" type="button">
+                    <span aria-hidden="true" class="carousel-control-next-icon"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
         </div>
+        {% endif %} -->
+        <!-- End of Recommended Carousel -->
+    
+        <div class="container mt-3">
+            <div class="d-flex flex-column mb-3">
+                <h3>Admin Controls</h3>
+                <div>
+                    {% if 'user_id' in session and 'admin' in session %}
+                        <form action="{{ url_for('movie.add') }}" method="GET">
+                            <button type="submit" class="btn btn-primary">Add Movie</button>
+                        </form>
+                    {% endif %}
+                    
+                </div>
+            </div>
+            <form action="/movie/search" autocomplete="off" class="mb-3 d-flex align-items-center" method="post">
+                <div class="autocomplete" style="width:300px;">
+                    <input class="form-control" id="myInput" name="searchName" placeholder="Movie Name, Genre or Language" type="text">
+                </div>
+                <button class="ms-2 btn btn-info text-white" type="submit">Search</button>
+            </form>
+        </div>
+    
+        <section class="container d-flex p-2 flex-wrap" data-scroll id="movieSection">
+            {% for movie in movies %}
+            <div class="col-xl-4 col-l-4 col-sm-12 col-12 col-md-6 p-1 mb-4 d-flex align-items-stretch mt-4">
+                <div class="card w-100">
+                    {% if 'user_id' in session and 'admin' in session %}
+                    <div class="dropdown">
+                        <button class="btn btn-info dropdown-toggle text-white w-100" data-bs-toggle="dropdown"
+                                type="button">
+                            Admin Controls
+                        </button>
+                        <ul class="dropdown-menu w-100">
+                            <li>
+                                <a class="dropdown-item text-success" href="/movie/update/{{movie._id}}">
+                                    <i class="fas fa-edit mr-2"></i> Update movie</a>
+                            </li>
+                            <li>
+                                <form action="{{url_for('movie.delete_movie', id=movie._id)}}" class="d-inline"
+                                      method="POST">
+                                    <button class="dropdown-item text-danger" type="submit">
+                                        <i class="fas fa-trash mr-2"></i> Delete Movie
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                    {%endif%}
+                    <div class="view overlay border-bottom">
+                        <img alt="{{movie.name}}" class="card-img-top" loading="lazy" src="https://image.tmdb.org/t/p/w500/{{movie.backdrop_path}}">
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <div>
+                            <h2 class="card-title">
+                                {{ movie.title }}
+                            </h2>
+                            <hr class="w-100"/>
+    
+                            <p class="card-text mb-0">
+                                {{ movie.overview }}
+                            </p>
+    
+                            <hr class="w-100"/>
+                            <div class="row mt-2">
+                                <div class="col text-start">
+                                    <p>
+                                        <i class="fas fa-calendar mr-2"></i> {{movie.release_date}}
+                                    </p>
+                                </div>
+                                <div class="col text-end">
+                                    <p class="card-text"><i class="fas fa-clock mr-2"></i>
+                                        {{movie.runtime}} minutes
+                                </div>
+                                <div class="w-100">
+                                    <p>
+                                        Available in: {{movie.spoken_language}}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row m-2">
+                        <div class="col text-start">
+                            <!-- Create a form that submits to the add orders route -->
+                            <form action="/orders/api/add" method="POST">
+                                {% if movie.is_rented == 1 %}
+                                    <input name="movie_id" type="hidden" value="{{ movie._id }}">
+                                    <button class="btn btn-primary" type="submit" disabled>
+                                        Already Rented
+                                    </button>
+                                {% elif movie.in_cart == 0 %}
+                                    <input name="movie_id" type="hidden" value="{{ movie._id }}">
+                                    <button class="btn btn-primary" type="submit">
+                                        Add to Cart
+                                    </button>
+                                {%else%}
+                                    <button class="btn btn-primary" type="submit" disabled>
+                                        Already in cart
+                                    </button>
+                                {%endif%}
+                            </form>
+                        </div>
+                        <div class="col text-end">
+                            <a class="btn btn-primary" href="/movie/single/{{movie._id}}">
+                                View movie details</a>
+                        </div>
+                    </div>
+                    <div class="card-footer text-center mt-2">
+                        <h5 class="m-0">$
+                            {{movie.price}}
+                        </h5>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+    
+            <div class="w-100 d-flex justify-content-center align-items-center">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        {% if page > 1 %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="/?page={{ page - 1 }}&per_page={{ per_page }}{% if searchName %}&searchName={{ searchName }}{% endif %}">
+                                Previous
+                            </a>
+                        </li>
+                        {% endif %}
+    
+                        <!-- Always show the first page -->
+                        {% if page > 3 %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="/?page=1&per_page={{ per_page }}{% if searchName %}&searchName={{ searchName }}{% endif %}">1</a>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+    
+                        <!-- Show the calculated range of pages around the current page -->
+                        {% for p in display_range %}
+                        <li class="page-item {% if page == p %}active{% endif %}">
+                            <a class="page-link"
+                               href="/?page={{ p }}&per_page={{ per_page }}{% if searchName %}&searchName={{ searchName }}{% endif %}">
+                                {{ p }}
+                            </a>
+                        </li>
+                        {% endfor %}
+    
+                        <!-- Always show the last page -->
+                        {% if page < total_pages - 2 %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="/?page={{ total_pages }}&per_page={{ per_page }}{% if searchName %}&searchName={{ searchName }}{% endif %}">{{
+                                total_pages }}</a>
+                        </li>
+                        {% endif %}
+    
+                        {% if page < total_pages %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="/?page={{ page + 1 }}&per_page={{ per_page }}{% if searchName %}&searchName={{ searchName }}{% endif %}">
+                                Next
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </section>
     </section>
-</section>
-
 {% endblock %}

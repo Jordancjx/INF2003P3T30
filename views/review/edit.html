@@ -3,8 +3,9 @@
 {% block body %}
 <section>
     <h1>Edit Your Review</h1>
-    <form method="POST" action="{{ url_for('review.update', id=review.id) }}">
+    <form method="POST" action="{{ url_for('review.update')}}">
         <input type="hidden" name="movie_id" value="{{ review.movies_id }}">
+        <input type="hidden" name="review_id" value="{{ review._id }}">
 
         <label for="rating">Select a rating:</label>
         <select name="rating" class="form-select mb-2" aria-label="rating">

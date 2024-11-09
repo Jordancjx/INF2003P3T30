@@ -97,33 +97,35 @@ def register_process():
     lname = request.form.get('lname')
     email = request.form.get('email')
 
-    if not all([username, fname, lname, email, hashed_password]):
-        flash("Not all fields are filled", "error")
+    if not all ([username, fname, lname, email, hashed_password]):
+        flash("Information missing", "error")
         return redirect(url_for('user.register'))
+    
+    db = current_app.mongo.db
+    existing_user = db.users.find_one({"$or": [{"username":username}, {"email":email}]})
 
-    with current_app.app_context():
-        sql = text("SELECT * FROM users WHERE username = :username OR email = :email")
-        result = db.session.execute(sql, {"username": username, "email": email})
-        existing_user = result.fetchone()
+    if existing_user:
+        flash("Username or Email already exists", "error")
+        return redirect(url_for('user.register'))
+    
+    user_data = {
+        "username": username,
+        "fname": fname,
+        "lname": lname,
+        "email": email,
+        "password": hashed_password,
+        "email_validated": False,
+        "admin_controls": False
+    }
 
-        if existing_user:
-            flash("Username or Email already exists", "error")
-            return redirect(url_for('user.register'))
-
-        insert = text(
-            "INSERT INTO users (username, fname, lname, email, password, email_validated, admin_controls) "
-            "VALUES (:username, :fname, :lname, :email, :password, :email_validated, :admin_controls)")
-
-        try:
-            db.session.execute(insert, {"username": username, "fname": fname, "lname": lname, "email": email,
-                                        "password": hashed_password, "email_validated": False, "admin_controls": False})
-            db.session.commit()
-            flash('Registered successfully!', 'success')
-            return redirect(url_for('user.login'))
-        except Exception as e:
-            db.session.rollback()
-            flash('An error has occurred during registration.', "error")
-            return redirect(url_for('user.register'))
+    try:
+        db.users.insert_one(user_data)
+        flash('Registered successfully!', 'success')
+        return redirect(url_for('user.login'))
+    except Exception as e:
+        flash('An error has occurred during registration.', "error")
+        return redirect(url_for('user.register'))
+    
 
 
 # Login API; Does not render any page
@@ -132,15 +134,13 @@ def login_process():
     identifier = request.form.get('username')  # This could be either email or username
     password = request.form.get('password')
 
-    with current_app.app_context():
-        sql = text("SELECT * FROM users WHERE username = :identifier OR email = :identifier LIMIT 1")
-        result = db.session.execute(sql, {"identifier": identifier})
-        user = result.fetchone()
+    db = current_app.mongo.db
+    user = db.users.find_one({"$or": [{"username": identifier}, {"email" : identifier}]})
 
-    if user and check_password_hash(user.password, password):
-        if user.admin_controls:
+    if user and check_password_hash(user['password'], password):
+        if user.get('admin_controls', False):
             session['admin'] = True
-        session['user_id'] = user.id
+        session['user_id'] = str(user['_id'])
 
         flash('Logged in successfully!', 'success')
         return redirect(url_for('index.index'))

@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_pymongo import PyMongo
 from flask_toastr import Toastr
 from datetime import timedelta
 from config.dbConnect import db
@@ -13,15 +14,21 @@ from controllers.rental import rentals_bp
 from controllers.forum import forum_bp
 from utilities.movie import clean_insert_movies
 
+
 import config.constants
 
 app = Flask(__name__, template_folder=config.constants.template_dir, static_folder=config.constants.static_dir,
             static_url_path='/public')
 
 # Setup DB
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{config.constants.database_file}'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db.init_app(app)
+# app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{config.constants.database_file}'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# db.init_app(app)
+
+app.config['MONGO_URI'] = config.constants.mongo_uri
+mongo = PyMongo(app)
+
+app.mongo = mongo  # Adding mongo to the app instance to resolve AttributeError
 
 # Init toastr
 toastr = Toastr(app)
@@ -44,13 +51,13 @@ from models.order import Order
 from models.purchases import Purchases, History
 from models.forum import Thread, Post
 
-with app.app_context():
+# with app.app_context():
     # ABSOLUTELY DO NOT UNCOMMENT, TESTING PURPOSES ONLY
     # db.drop_all()
     # Movie.__table__.drop(db.engine)
 
     # Create tables
-    db.create_all()
+    # db.create_all()
 
 if __name__ == '__main__':
     # App config
@@ -58,7 +65,4 @@ if __name__ == '__main__':
     app.permanent_session_lifetime = timedelta(hours=2)
     app.secret_key = config.constants.app_secret_key
 
-    with app.app_context():
-        # Insert movies (15-20 min)
-        clean_insert_movies()
     app.run()
