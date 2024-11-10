@@ -1,10 +1,10 @@
+from bson import ObjectId
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash, current_app
 from sqlalchemy import text
 import config.constants
-from config.dbConnect import db
-from models.user import User
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from config.dbConnect import db
 import os
 
 UPLOAD_FOLDER = 'public/profile_pics'  # Ensure this folder exists
@@ -42,15 +42,15 @@ def logout():
 # Profile
 @user_bp.route('/profile')
 def getProfile():
+    db = current_app.mongo.db
+
     # Check if user is logged in
     if 'user_id' not in session:
         flash("Please log in to view your profile.", "error")
         return redirect(url_for('user.login'))
 
     with current_app.app_context():
-        sql = text("SELECT * FROM users WHERE id = :id")
-        result = db.session.execute(sql, {"id": session['user_id']})
-        user = result.fetchone()
+        user = db.users.find_one({"_id": ObjectId(session['user_id'])})
 
         if user is None:
             flash("User not found.", "error")
@@ -97,17 +97,17 @@ def register_process():
     lname = request.form.get('lname')
     email = request.form.get('email')
 
-    if not all ([username, fname, lname, email, hashed_password]):
+    if not all([username, fname, lname, email, hashed_password]):
         flash("Information missing", "error")
         return redirect(url_for('user.register'))
-    
+
     db = current_app.mongo.db
-    existing_user = db.users.find_one({"$or": [{"username":username}, {"email":email}]})
+    existing_user = db.users.find_one({"$or": [{"username": username}, {"email": email}]})
 
     if existing_user:
         flash("Username or Email already exists", "error")
         return redirect(url_for('user.register'))
-    
+
     user_data = {
         "username": username,
         "fname": fname,
@@ -125,7 +125,6 @@ def register_process():
     except Exception as e:
         flash('An error has occurred during registration.', "error")
         return redirect(url_for('user.register'))
-    
 
 
 # Login API; Does not render any page
@@ -135,7 +134,7 @@ def login_process():
     password = request.form.get('password')
 
     db = current_app.mongo.db
-    user = db.users.find_one({"$or": [{"username": identifier}, {"email" : identifier}]})
+    user = db.users.find_one({"$or": [{"username": identifier}, {"email": identifier}]})
 
     if user and check_password_hash(user['password'], password):
         if user.get('admin_controls', False):

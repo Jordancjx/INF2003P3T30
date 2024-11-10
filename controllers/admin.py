@@ -1,9 +1,6 @@
+from bson import ObjectId
 from flask import Blueprint, render_template, current_app, request, jsonify, session, redirect, url_for, flash
 import config.constants
-from config.dbConnect import db
-from models.user import User
-from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import text
 
 admin_bp = Blueprint('admin', __name__, template_folder=config.constants.template_dir,
                      static_folder=config.constants.static_dir, static_url_path='/public', url_prefix='/admin')
@@ -12,21 +9,24 @@ admin_bp = Blueprint('admin', __name__, template_folder=config.constants.templat
 # Dashboard
 @admin_bp.route('/')
 def adminIndex():
+    db = current_app.mongo.db
     with current_app.app_context():
-        sql = text("SELECT * FROM users")
-        result = db.session.execute(sql)
-        users = result.fetchall()
+        users = list(db.users.find({}))
         return render_template('/admin/dashboard.html', users=users)
 
 
 # Delete User API
 @admin_bp.route('/delete_user', methods=["POST"])
 def deleteUser():
+    db = current_app.mongo.db
     with current_app.app_context():
-        sql = text("DELETE FROM users WHERE id = :id")
-        db.session.execute(sql, {"id": request.form.get('user_id')})
-        db.session.commit()  # Commit changes to the database
-        flash('User deleted successfully!')
+        result = db.users.delete_one({"_id": ObjectId(id)})
+
+        if result.deleted_count > 0:
+            flash('User deleted successfully!')
+
+        else:
+            flash('Error deleting user')
 
         return redirect(url_for('admin.adminIndex'))
 
@@ -34,10 +34,11 @@ def deleteUser():
 # Make User Admin
 @admin_bp.route('/admin_user', methods=["POST"])
 def adminUser():
+    db = current_app.mongo.db
     with current_app.app_context():
-        sql = text("UPDATE users SET admin_controls = 1 WHERE id = :id")
-        db.session.execute(sql, {"id": request.form.get('user_id')})
-        db.session.commit()
+        db.users.update_one({"_id": ObjectId(request.form.get('user_id'))},
+                            {'$set': {"admin_controls": 1}})
+
         flash('Granted admin privileges successfully!')
 
         return redirect(url_for('admin.adminIndex'))
@@ -46,10 +47,11 @@ def adminUser():
 # Revoke Admin Access
 @admin_bp.route('/revoke_admin', methods=["POST"])
 def revokeUser():
+    db = current_app.mongo.db
     with current_app.app_context():
-        sql = text("UPDATE users SET admin_controls = 0 WHERE id = :id")
-        db.session.execute(sql, {"id": request.form.get('user_id')})
-        db.session.commit()
+        db.users.update_one({"_id": ObjectId(request.form.get('user_id'))},
+                            {'$set': {"admin_controls": 0}})
+
         flash('Revoked admin privileges successfully')
 
         return redirect(url_for('admin.adminIndex'))

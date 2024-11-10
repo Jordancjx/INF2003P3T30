@@ -1,9 +1,6 @@
 from flask import Blueprint, render_template, flash, request, redirect, current_app, url_for, session
 import config.constants
-from config.dbConnect import db
-from models.movie import Movie
 from werkzeug.utils import secure_filename
-from models.review import Review
 import os
 from datetime import datetime, timedelta
 from bson import ObjectId
@@ -21,12 +18,12 @@ def allowed_file(filename):
 
 @movies_bp.route('/add')
 def add():
-    #check if user is logged in and is admin
+    # check if user is logged in and is admin
     if 'user_id' not in session or 'admin' not in session:
         flash('You must be logged in as an admin to add a movie.', 'error')
         return redirect(url_for('index.index'))
-    
-    #if user is logged in, render the add movie page
+
+    # if user is logged in, render the add movie page
     return render_template('movie/add.html')
 
 
@@ -47,15 +44,15 @@ def single(id):
     with current_app.app_context():
         if 'user_id' in session:
             user_id = session['user_id']
-            movie = db.Movies.find_one({"_id":ObjectId(id)}), {"name": 1, "genres": 1, "language": 1, "description": 1}
-            
+            movie = db.Movies.find_one({"_id": ObjectId(id)}), {"name": 1, "genres": 1, "language": 1, "description": 1}
+
             if not movie:
                 flash('Movie not found', 'error')
                 return redirect(url_for('index.index'))
-            
+
             # Fetch all reviews for the movie
             # reviews = list(db.reviews.find({"movies_id": ObjectId(id)}).sort("timestamp", -1))
-            
+
             reviews = db.reviews.aggregate([
                 {
                     "$match": {"movies_id": ObjectId(id)}
@@ -69,25 +66,25 @@ def single(id):
                     }
                 },
                 {
-                    "$unwind" : "$user_info"
+                    "$unwind": "$user_info"
                 },
                 {
                     "$project": {
                         "rating": 1,
                         "body": 1,
-                        "movies_id": 1, 
-                        "user_info.username" : 1,
-                        "user_info._id" : {"$toString": "$user_info._id"},
+                        "movies_id": 1,
+                        "user_info.username": 1,
+                        "user_info._id": {"$toString": "$user_info._id"},
                     }
                 }
             ])
-            
+
             user_id = str(session.get('user_id')) if 'user_id' in session else None
-            
+
             reviews = list(reviews)
             for review in reviews:
                 review['user_info']['_id'] = str(review['user_info']['_id'])
-                if(review['user_info']['_id'] == user_id):
+                if review['user_info']['_id'] == user_id:
                     review['user_info']['user'] = 1
                 else:
                     review['user_info']['user'] = 0
@@ -96,25 +93,27 @@ def single(id):
             review_exists = review_check > 0
 
         else:
-            movie = db.Movies.find_one({"_id":ObjectId(id)}), {"name": 1, "genres": 1, "language": 1, "description": 1}
+            movie = db.Movies.find_one({"_id": ObjectId(id)}), {"name": 1, "genres": 1, "language": 1, "description": 1}
             if not movie:
                 flash('Movie not found', 'error')
                 return redirect(url_for('index.index'))
-            
+
             reviews = list(db.Reviews.find({"movies_id": ObjectId(id)}).sort("timestamp", -1))
-            
 
         # return render_template('movie/single.html', movie=movie, reviews=reviews, rental_expiry=rental_expiry, is_active=is_active, review_exists=review_exists)
-        return render_template('movie/single.html', movie=movie[0], review_exists=review_exists, reviews=reviews, user_id = user_id)
+        return render_template('movie/single.html', movie=movie[0], review_exists=review_exists, reviews=reviews,
+                               user_id=user_id)
 
 
 # Api to add movies, won't render any page
 @movies_bp.route('/api/add', methods=['POST'])
 def post_add_movie():
-     #check if user is logged in and is admin
+    # check if user is logged in and is admin
     if 'user_id' not in session or 'admin' not in session:
         flash('You must be logged in as an admin to add a movie.', 'error')
         return redirect(url_for('index.index'))
+
+    db = current_app.mongo.db
 
     with current_app.app_context():
         try:
@@ -128,10 +127,7 @@ def post_add_movie():
                         file.save(file_path)
                         poster_url = f"/{file_path}"
 
-            sql = text(
-                "INSERT INTO movies (name, synopsis, release_date, runtime, price, image_url, trailer_link) "
-                "VALUES (:name, :synopsis, :release_date, :runtime, :price, :image_url, :trailer_link)")
-            result = db.session.execute(sql, {
+            movie_document = {
                 "name": request.form.get('moviename'),
                 "synopsis": request.form.get("synopsis"),
                 "release_date": request.form.get("release_date"),
@@ -139,8 +135,10 @@ def post_add_movie():
                 "price": request.form.get("price"),
                 "image_url": poster_url,
                 "trailer_link": request.form.get("trailer_link")
-            })
-            db.session.commit()
+            }
+
+            db.Movies.insert_one(movie_document)
+
             flash('Movie has been added.', 'success')
             return redirect(url_for('movie.add'))
         except Exception as e:
@@ -154,28 +152,25 @@ def post_add_movie():
 def post_update_movie():
     rq = request.form
     id = rq.get('movie_id')
-    # langs = rq.getlist('langs[]')
+
+    db = current_app.mongo.db
 
     with current_app.app_context():
-        sql = text("SELECT * FROM movies WHERE id = :id")
-        result = db.session.execute(sql, {"id": id})
-        movie = result.fetchone()
+        movie = db.Movies.find_one({"_id": ObjectId(id)})
 
         if movie:
-            sql = text(
-                "UPDATE movies "
-                "SET name=:name, synopsis=:synopsis, price=:price, runtime=:runtime, release_date=:release_date")
+            updated_fields = {
+                "name": rq.get('moviename'),
+                "synopsis": rq.get('synopsis'),
+                "price": rq.get('price'),
+                "runtime": rq.get('runtime'),
+                "release_date": rq.get('release_date')
+            }
 
-            name = rq.get('moviename')
-            synopsis = rq.get('synopsis')
-            price = rq.get('price')
-            runtime = rq.get('runtime')
-            release_date = rq.get('release_date')
-            # movie.trailer_link = rq.get("trailer_link")
-
-            db.session.execute(sql, {"name": name, "synopsis": synopsis, "price": price, "runtime": runtime,
-                                     "release_date": release_date})
-            db.session.commit()
+            db.Movies.update_one(
+                {"_id": ObjectId(id)},
+                {"$set": updated_fields}
+            )
 
             return redirect(url_for('movie.single', id=id))
         else:
@@ -185,10 +180,10 @@ def post_update_movie():
 
 @movies_bp.route('/update/<string:id>')
 def update_movie(id):
+    db = current_app.mongo.db
+
     with current_app.app_context():
-        sql = text("SELECT * FROM movies WHERE id = :id")
-        result = db.session.execute(sql, {"id": id})
-        movie = result.fetchone()
+        movie = db.Movies.find_one({"_id": ObjectId(id)})
 
         if movie is None:
             flash('Movie not found', 'error')
@@ -199,19 +194,21 @@ def update_movie(id):
 
 @movies_bp.route('/api/delete/<string:id>', methods=['POST'])
 def delete_movie(id):
+    db = current_app.mongo.db
+
     with current_app.app_context():
-        print(id)
-        sql = text("SELECT * FROM movies WHERE id = :id")
-        result = db.session.execute(sql, {"id": id})
-        movie = result.fetchone()
+        movie = db.Movies.find_one({"_id": ObjectId(id)})
 
         if movie is None:
             flash('Movie not found', 'error')
             return redirect(url_for('index.index'))
 
-        sql = text('DELETE from movies WHERE id = :id')
-        db.session.execute(sql, {'id': id})
-        db.session.commit()
+        result = db.Movies.delete_one({"_id": ObjectId(id)})
 
-        flash('Movie deleted successfully!', 'success')
-        return redirect(url_for('index.index'))
+        if result.deleted_count > 0:
+            flash('Movie deleted successfully!', 'success')
+            return redirect(url_for('index.index'))
+
+        else:
+            flash('Error while deleting movie', 'error')
+            return redirect(url_for('index.index'))
