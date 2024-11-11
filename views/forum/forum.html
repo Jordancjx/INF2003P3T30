@@ -13,9 +13,9 @@
     <div class="d-flex flex-column mt-3">
         <div class="list-group">
             {%for thread in threads %}
-            <a href="/forum/single/{{thread.id}}" class="d-flex flex-column list-group-item list-group-item-action" aria-current="true">
+            <a href="/forum/single/{{thread._id}}" class="d-flex flex-column list-group-item list-group-item-action" aria-current="true">
               <div><h3 class = "mt-2">{{thread.title}}</h3></div>
-              <div><p>Created by {{thread.username}} on {{thread.created_time}}</div>
+              <div><p>Created by {{thread.user_info.username}} on {{thread.created_time}}</div>
             </a>
             {%endfor%}
           </div>
