@@ -39,11 +39,12 @@ def single(id):
     rental_expiry = None
     is_active = None
     review_exists = False
+    user_id = None
+
     db = current_app.mongo.db
 
     with current_app.app_context():
         if 'user_id' in session:
-            user_id = session['user_id']
             movie = db.Movies.find_one({"_id": ObjectId(id)}), {"name": 1, "genres": 1, "language": 1, "description": 1}
 
             if not movie:
@@ -132,7 +133,7 @@ def post_add_movie():
                 "release_date": request.form.get("release_date"),
                 "runtime": request.form.get("runtime"),
                 "price": request.form.get("price"),
-                "image_url": poster_url,
+                "poster_path": poster_url,
                 "trailer_link": request.form.get("trailer_link")
             }
 
@@ -159,8 +160,8 @@ def post_update_movie():
 
         if movie:
             updated_fields = {
-                "name": rq.get('moviename'),
-                "synopsis": rq.get('synopsis'),
+                "title": rq.get('moviename'),
+                "overview": rq.get('synopsis'),
                 "price": rq.get('price'),
                 "runtime": rq.get('runtime'),
                 "release_date": rq.get('release_date')

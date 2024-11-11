@@ -31,7 +31,7 @@
                                         <p>Rating: {{ movie.avg_rating or 0 | round(2) }}</p>
                                         <p>Runtime: {{ movie.runtime }} minutes</p>
                                         <p>Release Date: {{ movie.release_date }}</p>
-                                        <a href="/movie/single/{{movie.id}}" class="btn btn-primary">View details</a>
+                                        <a href="/movie/single/{{movie._id}}" class="btn btn-primary">View details</a>
                                     </div>
                                 </div>
                             </div>
@@ -75,7 +75,7 @@
                                         <p>Rating: {{ movie.avg_rating | round(2) }}</p>
                                         <p>Runtime: {{ movie.runtime }} minutes</p>
                                         <p>Release Date: {{ movie.release_date }}</p>
-                                        <a href="/movie/single/{{movie.id}}" class="btn btn-primary">View details</a>
+                                        <a href="/movie/single/{{movie._id}}" class="btn btn-primary">View details</a>
                                     </div>
                                 </div>
                             </div>
@@ -166,11 +166,6 @@
                                 <div class="col text-end">
                                     <p class="card-text"><i class="fas fa-clock mr-2"></i>
                                         {{movie.runtime}} minutes
-                                </div>
-                                <div class="w-100">
-                                    <p>
-                                        Available in: {{movie.spoken_language}}
-                                    </p>
                                 </div>
                             </div>
                         </div>

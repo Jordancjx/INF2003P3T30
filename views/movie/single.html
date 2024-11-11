@@ -51,7 +51,7 @@
                         <h3><strong>LANGUAGES</strong></h3>
                         <div>
                             <h5>
-                                {{movie.spoken_language}}
+                                {{movie.spoken_languages}}
                             </h5>
                         </div>
                     </div>
@@ -68,8 +68,8 @@
             </div>
             <div class="col-xl-6 col-lg-6 col-12 d-flex flex-column">
                 <div class="movie-image d-flex justify-content-end align-items-center">
-                    <img alt="{{movie.name}}" class="w-75" loading="lazy"
-                         src="https://image.tmdb.org/t/p/w500/{{movie.image_url}}">
+                    <img alt="{{movie.title}}" class="w-75" loading="lazy"
+                         src="https://image.tmdb.org/t/p/w500/{{movie.poster_path}}">
                 </div>
             </div>
             <!-- Rental actions -->
@@ -107,7 +107,7 @@
                 <form action="/review/api/add" class="form-group review-form" method="post" style="width: 40%">
                     <input name="movie_id" type="hidden" value="{{ movie._id }}"> 
                     <label for="rating">Select a rating:</label>
-                    <select aria-label="rating" class="form-select mb-2" name="rating">
+                    <select aria-label="rating" class="form-select mb-2" name="rating" id="rating">
                         <option value="5">5/5</option>
                         <option value="4">4/5</option>
                         <option value="3">3/5</option>
@@ -115,7 +115,7 @@
                         <option value="1">1/5</option>
                     </select>
                     <label for="review">Review:</label>
-                    <textarea aria-label="review" class="form-control mb-2" name="review" required
+                    <textarea aria-label="review" class="form-control mb-2" name="review" id="review" required
                               rows="3"></textarea>
                     <button class="btn btn-success" type="submit">Add Review</button>
                 </form>
