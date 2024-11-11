@@ -100,7 +100,6 @@ def single(id):
 
             reviews = list(db.Reviews.find({"movies_id": ObjectId(id)}).sort("timestamp", -1))
 
-        # return render_template('movie/single.html', movie=movie, reviews=reviews, rental_expiry=rental_expiry, is_active=is_active, review_exists=review_exists)
         return render_template('movie/single.html', movie=movie[0], review_exists=review_exists, reviews=reviews,
                                user_id=user_id)
 
@@ -128,8 +127,8 @@ def post_add_movie():
                         poster_url = f"/{file_path}"
 
             movie_document = {
-                "name": request.form.get('moviename'),
-                "synopsis": request.form.get("synopsis"),
+                "title": request.form.get('moviename'),
+                "overview": request.form.get("synopsis"),
                 "release_date": request.form.get("release_date"),
                 "runtime": request.form.get("runtime"),
                 "price": request.form.get("price"),

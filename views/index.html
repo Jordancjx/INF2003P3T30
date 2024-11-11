@@ -9,7 +9,8 @@
         </div>
     
         <!-- Carousel for Top Rated Movies -->
-        <!-- <div class="container mt-3">
+        {% if top_movies %}
+        <div class="container mt-3">
             <h2 class="text-center">Top Rated Movies</h2>
             <div class="carousel slide" data-bs-ride="carousel" id="topRatedCarousel">
                 <div class="carousel-inner">
@@ -19,15 +20,15 @@
                             <div class="row align-items-center">
                                 <!-- Movie Image on the Left -->
                                 <div class="col-md-4 d-flex justify-content-center align-items-center">
-                                    <img alt="{{ movie.name }}" class="d-block w-100" src="https://image.tmdb.org/t/p/w500/{{ movie.image_url }}">
+                                    <img alt="{{ movie.title }}" class="d-block w-100" src="https://image.tmdb.org/t/p/w500/{{ movie.poster_path }}">
                                 </div>
-    
-                                <!-- Movie Details on the Right
+
+                                <!-- Movie Details on the Right -->
                                 <div class="col-md-8">
                                     <div class="d-md-block" style="font-size: large;">
-                                        <h1>{{ movie.name }}</h1>
-                                        <p>{{ movie.synopsis }}</p>
-                                        <p>Rating: {{ movie.avg_rating | round(2) }}</p>
+                                        <h1>{{ movie.title }}</h1>
+                                        <p>{{ movie.overview }}</p>
+                                        <p>Rating: {{ movie.avg_rating or 0 | round(2) }}</p>
                                         <p>Runtime: {{ movie.runtime }} minutes</p>
                                         <p>Release Date: {{ movie.release_date }}</p>
                                         <a href="/movie/single/{{movie.id}}" class="btn btn-primary">View details</a>
@@ -47,10 +48,11 @@
                     <span class="visually-hidden">Next</span>
                 </button>
             </div>
-        </div> --> 
+        </div>
+        {% endif %}
         <!-- End of Top Rated Movies Carousel -->
     
-        <!-- Carousel for Recommended Movies
+        <!-- Carousel for Recommended Movies -->
         {% if recommendations %}
         <div class="container">
             <h2 class="text-center">Recommended for you</h2>
@@ -62,14 +64,14 @@
                             <div class="row align-items-center">
                                 <!-- Movie Image on the Left -->
                                 <div class="col-md-4 d-flex justify-content-center align-items-center">
-                                    <img alt="{{ movie.name }}" class="d-block w-100" src="https://image.tmdb.org/t/p/w500/{{ movie.image_url }}">
+                                    <img alt="{{ movie.title }}" class="d-block w-100" src="https://image.tmdb.org/t/p/w500/{{ movie.poster_path }}">
                                 </div>
     
                                 <!-- Movie Details on the Right -->
                                 <div class="col-md-8">
                                     <div class="d-md-block" style="font-size: large;">
-                                        <h1>{{ movie.name }}</h1>
-                                        <p>{{ movie.synopsis }}</p>
+                                        <h1>{{ movie.title }}</h1>
+                                        <p>{{ movie.overview }}</p>
                                         <p>Rating: {{ movie.avg_rating | round(2) }}</p>
                                         <p>Runtime: {{ movie.runtime }} minutes</p>
                                         <p>Release Date: {{ movie.release_date }}</p>
@@ -91,7 +93,7 @@
                 </button>
             </div>
         </div>
-        {% endif %} -->
+        {% endif %}
         <!-- End of Recommended Carousel -->
     
         <div class="container mt-3">
@@ -141,7 +143,7 @@
                     </div>
                     {%endif%}
                     <div class="view overlay border-bottom">
-                        <img alt="{{movie.name}}" class="card-img-top" loading="lazy" src="https://image.tmdb.org/t/p/w500/{{movie.backdrop_path}}">
+                        <img alt="{{movie.title}}" class="card-img-top" loading="lazy" src="https://image.tmdb.org/t/p/w500/{{movie.poster_path}}">
                     </div>
                     <div class="card-body d-flex flex-column">
                         <div>

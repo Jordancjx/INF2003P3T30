@@ -1,6 +1,5 @@
 from bson import ObjectId
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash, current_app
-from sqlalchemy import text
+from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
 import config.constants
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -68,21 +67,33 @@ def cart():
         return redirect(url_for('user.login'))
 
     user_id = session['user_id']
+    db = current_app.mongo.db
+
     with current_app.app_context():
         # Fetch the user's orders and join with the movies table to get movie names
-        sql = text("""
-            SELECT orders.id, orders.order_timestamp, orders.total_price, movies.name 
-            FROM orders 
-            JOIN movies ON orders.movie_id = movies.id 
-            WHERE orders.users_id = :user_id
-        """)
-        result = db.session.execute(sql, {"user_id": user_id})
-        orders = result.fetchall()
+        orders = list(db.orders.aggregate(
+            {"$match": {"users_id": ObjectId(user_id)}},
 
-        # Calculate the total sum of prices
-        total_sum_sql = text("SELECT COALESCE(SUM(total_price), 0) as total_sum FROM orders WHERE users_id = :user_id")
-        total_sum_result = db.session.execute(total_sum_sql, {"user_id": user_id})
-        total_sum = total_sum_result.fetchone().total_sum
+            # Perform the join to retrieve movie details
+            {"$lookup": {
+                "from": "Movies",
+                "localField": "movie_id",
+                "foreignField": "_id",
+                "as": "movie_details"
+            }},
+
+            {"$unwind": "$movie_details"},
+
+            {"$addFields": {"movie_name": "$movie_details.title"}},
+
+            {"$project": {
+                "movie_name": 1,
+                "total_price": 1,
+                "order_timestamp": 1
+            }}
+        ))
+
+        total_sum = sum(order.get("total_price", 0) for order in orders)
 
         # Pass the fetched data to the cart template
         return render_template('/user/cart.html', orders=orders, total_sum=total_sum)
@@ -122,6 +133,7 @@ def register_process():
         db.users.insert_one(user_data)
         flash('Registered successfully!', 'success')
         return redirect(url_for('user.login'))
+
     except Exception as e:
         flash('An error has occurred during registration.', "error")
         return redirect(url_for('user.register'))
@@ -174,42 +186,35 @@ def update_profile():
 
     with current_app.app_context():
         try:
-            params = {
+            update_data = {
                 "fname": fname,
                 "lname": lname,
                 "email": email,
-                "user_id": user_id
             }
 
-            updatesql = "UPDATE users SET fname = :fname, lname = :lname, email = :email"
-
             if profile_pic_url:
-                updatesql += ", profile_pic_url = :profile_pic_url"
-                params["profile_pic_url"] = profile_pic_url
+                update_data["profile_pic_url"] = profile_pic_url
 
             if password:
-                stored_password_sql = text("SELECT password FROM users WHERE id = :user_id")
-                stored_password_result = db.session.execute(stored_password_sql, {"user_id": user_id})
-                stored_password = stored_password_result.scalar()
+                user = db.users.find_one({"_id": ObjectId(user_id)})
+                stored_password = user.get("password")
 
                 if not check_password_hash(stored_password, old_password):
                     flash('Incorrect old password', 'error')
                     return redirect(url_for('user.getProfile'))
 
                 hashed_password = generate_password_hash(password)
-                updatesql += ", password = :password"
-                params["password"] = hashed_password
+                update_data["password"] = hashed_password
 
-            updatesql += " WHERE id = :user_id"
-
-            db.session.execute(text(updatesql), params)
-            db.session.commit()
+            db.users.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$set": update_data}
+            )
 
             flash("Profile updated successfully!", "success")
             return redirect(url_for('user.getProfile'))
 
         except Exception as e:
-            db.session.rollback()
             print(e)
             flash("An error occurred while updating the profile", "error")
             return redirect(url_for('user.getProfile'))

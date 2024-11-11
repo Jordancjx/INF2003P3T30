@@ -4,16 +4,17 @@ import config.constants
 index_bp = Blueprint('index', __name__, template_folder=config.constants.template_dir,
                      static_folder=config.constants.static_dir, static_url_path='/public', url_prefix='/')
 
+
 @index_bp.route('/')
 def index():
     recommendations = None
     searchQuery = request.args.get("searchName")
     page = request.args.get('page', default=1, type=int)  # Defaults to page 1 if not provided
     per_page = request.args.get('per_page', default=12, type=int)  # Defaults to 12 items per page if not provided
-    
+
     db = current_app.mongo.db
     user_id = session.get('user_id')
-    
+
     # Conditional filter for search criteria
     query_filter = {}
     if searchQuery:
@@ -25,14 +26,14 @@ def index():
                 {"spoken_languages": {"$regex": searchQuery, "$options": "i"}}
             ]
         }
-        
+
     # Fetch total number of matching movies
     total_movies = db.Movies.count_documents(query_filter)
-    
+
     # Pagination logic
     movies_cursor = db.Movies.find(query_filter).skip((page - 1) * per_page).limit(per_page)
     movies = list(movies_cursor)
-    
+
     # Add fields `in_cart` and `is_rented` to each movie based on the user's history
     # for movie in movies:
     #     movie['in_cart'] = db.orders.find_one({"movie_id": movie["_id"], "user_id": ObjectId(user_id)}) is not None
@@ -43,7 +44,7 @@ def index():
     display_range = range(max(1, page - 14), min(total_pages + 1, page + 15))
 
     # Fetch top-rated movies for the carousel
-    top_movies_cursor = db.movies.aggregate([
+    top_movies_cursor = db.Movies.aggregate([
         {"$lookup": {
             "from": "reviews",
             "localField": "_id",
@@ -78,7 +79,7 @@ def index():
     #         {"$limit": 1}
     #     ])
     #     most_watched_genre = list(most_watched_genre)
-        
+
     #     if most_watched_genre:
     #         genre = most_watched_genre[0]["_id"]
     #         recommendations_cursor = db.movies.aggregate([
@@ -100,14 +101,11 @@ def index():
     #         ])
     #         recommendations = list(recommendations_cursor)
 
-
-    return render_template('index.html', 
-                           movies=movies, 
-                           page=page, 
-                           per_page=per_page, 
+    return render_template('index.html',
+                           movies=movies,
+                           page=page,
+                           per_page=per_page,
                            searchName=searchQuery,
                            total_pages=total_pages,
                            display_range=display_range,
                            top_movies=top_movies, recommendations=recommendations)
-
-    return render_template('index.html')
