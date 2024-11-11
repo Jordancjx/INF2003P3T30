@@ -76,23 +76,22 @@
 
             <div class="mt-4">
                 {% if 'user_id' in session %}
-                <!-- Show rental status or option to add to cart -->
-                {% if is_active %}
-                <button aria-disabled="true" class="btn btn-lg w-100 btn-primary px-5 py-3 disabled" role="button">
-                    Rented: Expires on
-                    {{ rental_expiry.strftime('%d-%m-%Y') }}
-                </button>
-                {% else %}
-                <form action="/orders/api/add" class="form-group" method="POST">
-                    <input name="movie_id" type="hidden" value="{{ movie.id }}">
-                    <button class="btn btn-lg w-100 btn-primary" type="submit">Rent Now for ${{ movie.price }}</button>
-                </form>
-                {% endif %}
-                {% else %}
-                <a aria-disabled="true" class="btn btn-lg w-100 btn-primary px-5 py-3 disabled" role="button">Please log
-                    in to
-                    rent</a>
-                {% endif %}
+                    <!-- Show rental status or option to add to cart -->
+                    {% if is_active %}
+                    <button aria-disabled="true" class="btn btn-lg w-100 btn-primary px-5 py-3 disabled" role="button">
+                        Rented: Expires on {{ rental_expiry }}
+                    </button>
+                    {% else %}
+                    <form action="/orders/api/add" class="form-group" method="POST">
+                        <input name="movie_id" type="hidden" value="{{ movie._id }}">
+                        <button class="btn btn-lg w-100 btn-primary" type="submit">Rent Now for ${{ movie.price }}</button>
+                    </form>
+                    {% endif %}
+                    {% else %}
+                    <a aria-disabled="true" class="btn btn-lg w-100 btn-primary px-5 py-3 disabled" role="button">Please log
+                        in to
+                        rent</a>
+                    {% endif %}
             </div>
         </div>
 

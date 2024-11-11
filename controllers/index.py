@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, current_app, session
 import config.constants
+from bson import ObjectId
 
 index_bp = Blueprint('index', __name__, template_folder=config.constants.template_dir,
                      static_folder=config.constants.static_dir, static_url_path='/public', url_prefix='/')
@@ -34,10 +35,26 @@ def index():
     movies_cursor = db.Movies.find(query_filter).skip((page - 1) * per_page).limit(per_page)
     movies = list(movies_cursor)
 
-    # Add fields `in_cart` and `is_rented` to each movie based on the user's history
-    # for movie in movies:
-    #     movie['in_cart'] = db.orders.find_one({"movie_id": movie["_id"], "user_id": ObjectId(user_id)}) is not None
-    #     movie['is_rented'] = db.history.find_one({"movie_id": movie["_id"], "user_id": ObjectId(user_id)}) is not None
+    # Get a list of movie IDs that the user has in their orders (in the cart)
+    order_movie_ids = [
+        ObjectId(order['movie_id']) for order in db.orders.find({"users_id": ObjectId(user_id)}, {"movie_id": 1})
+    ]
+
+    # Retrieve the list of purchase IDs for the user from the purchases collection
+    purchase_ids = [
+        purchase['_id'] for purchase in db.purchases.find({"users_id": ObjectId(user_id)}, {"_id": 1})
+    ]
+
+    # Based on retrieved purchase IDs, find the movie IDs in the history collection
+    rented_movie_ids = [
+        history['movie_id'] for history in db.history.find({"purchase_id": {"$in": purchase_ids}}, {"movie_id": 1})
+    ]
+
+    # Add `in_cart` and `is_rented` fields to each movie based on the above lists
+    for movie in movies:
+        movie['in_cart'] = movie["_id"] in order_movie_ids  # Check if the movie is in the cart
+        movie['is_rented'] = movie["_id"] in rented_movie_ids  # Check if the movie is rented
+
 
     # Total pages calculation
     total_pages = (total_movies + per_page - 1) // per_page

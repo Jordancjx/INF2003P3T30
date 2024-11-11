@@ -22,12 +22,12 @@
                     <tbody>
                     {% for order in orders %}
                     <tr class="animated faster">
-                        <td class="align-middle">{{ order.name }}</td> <!-- Display the movie name -->
+                        <td class="align-middle">{{ order.movie_name }}</td> <!-- Display the movie name -->
                         <td class="align-middle">${{ order.total_price }}</td> <!-- Display the price -->
                         <td class="align-middle">
                             <!-- Remove Button -->
                             <form action="/orders/api/remove" method="post">
-                                <input name="order_id" type="hidden" value="{{ order.id }}">
+                                <input name="order_id" type="hidden" value="{{ order._id }}">
                                 <button class="btn btn-danger" type="submit">Remove <i class="fas fa-times ml-2"></i>
                                 </button>
                             </form>

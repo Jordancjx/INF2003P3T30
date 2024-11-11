@@ -1,8 +1,7 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, current_app
-from sqlalchemy import text
 import config.constants
 from datetime import datetime, timedelta
-from config.dbConnect import db
+from bson import ObjectId
 
 rentals_bp = Blueprint('rental', __name__, template_folder=config.constants.template_dir,
                        static_folder=config.constants.static_dir, static_url_path='/public', url_prefix='/rentals')
@@ -19,38 +18,43 @@ def rentals():
     user_id = session['user_id']
     rental_period_days = 7  # Rental period of 7 days
 
+    db = current_app.mongo.db
+
+    # Fetch rented movies for the user
     with current_app.app_context():
-        # Fetch rented movies
-        rented_movies_sql = text("""
-            SELECT m.id, m.name, m.synopsis, m.release_date, m.runtime, m.price, m.image_url, p.purchase_timestamp
-            FROM movies m
-            INNER JOIN history h ON h.movie_id = m.id
-            INNER JOIN purchases p ON h.purchase_id = p.id
-            WHERE p.users_id = :user_id
-        """)
-        result = db.session.execute(rented_movies_sql, {"user_id": user_id})
-        movies = result.fetchall()
-
-        # Calculate expiration dates and check if rentals are still active
+        # Retrieve purchase records for the user
+        purchases = list(db.purchases.find({"users_id": ObjectId(user_id)}))
+        
+        # Retrieve movie rentals linked to the user's purchase history
         rented_movies = []
-        for movie in movies:
-            purchased_at = movie.purchase_timestamp  # Rental start date
-            rental_expiry = datetime.strptime(purchased_at, "%Y-%m-%d %H:%M:%S.%f") + timedelta(
-                days=rental_period_days)  # Expiration date
-            is_active = rental_expiry >= datetime.now()  # Check if rental is still active
+        for purchase in purchases:
+            purchase_id = purchase["_id"]
+            purchase_timestamp = purchase["purchase_timestamp"]
 
-            # Append movie details along with the expiration date and rental status
-            rented_movies.append({
-                "id": movie.id,
-                "name": movie.name,
-                "synopsis": movie.synopsis,
-                "release_date": movie.release_date,
-                "runtime": movie.runtime,
-                "price": movie.price,
-                "image_url": movie.image_url,
-                "rental_expiry": rental_expiry,
-                "is_active": is_active
-            })
+            # Retrieve history records for this purchase
+            history_records = list(db.history.find({"purchase_id": ObjectId(purchase_id)}))
+
+            for history in history_records:
+                movie_id = ObjectId(history["movie_id"])
+                movie = db.Movies.find_one({"_id": movie_id})
+
+                if movie:
+                    # Calculate the rental expiration date
+                    rental_expiry = purchase_timestamp + timedelta(days=rental_period_days)
+                    is_active = rental_expiry >= datetime.now()  # Check if rental is still active
+
+                    # Append movie details along with the expiration date and rental status
+                    rented_movies.append({
+                        "id": movie["_id"],
+                        "title": movie["title"],
+                        "overview": movie["overview"],
+                        "release_date": movie["release_date"],
+                        "runtime": movie["runtime"],
+                        "price": movie["price"],
+                        "poster_path": movie["poster_path"],
+                        "rental_expiry": rental_expiry,
+                        "is_active": is_active
+                    })
 
         # Pass the rented movies to the template
         return render_template('/rental/rental.html', movies=rented_movies)

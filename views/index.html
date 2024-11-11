@@ -174,21 +174,24 @@
                         <div class="col text-start">
                             <!-- Create a form that submits to the add orders route -->
                             <form action="/orders/api/add" method="POST">
-                                {% if movie.is_rented == 1 %}
+                                {% if movie.is_rented %}
+                                    <!-- Movie is already rented -->
                                     <input name="movie_id" type="hidden" value="{{ movie._id }}">
                                     <button class="btn btn-primary" type="submit" disabled>
                                         Already Rented
                                     </button>
-                                {% elif movie.in_cart == 0 %}
+                                {% elif not movie.in_cart %}
+                                    <!-- Movie is not in cart -->
                                     <input name="movie_id" type="hidden" value="{{ movie._id }}">
                                     <button class="btn btn-primary" type="submit">
                                         Add to Cart
                                     </button>
-                                {%else%}
+                                {% else %}
+                                    <!-- Movie is already in the cart -->
                                     <button class="btn btn-primary" type="submit" disabled>
-                                        Already in cart
+                                        Already in Cart
                                     </button>
-                                {%endif%}
+                                {% endif %}
                             </form>
                         </div>
                         <div class="col text-end">

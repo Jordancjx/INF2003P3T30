@@ -71,27 +71,22 @@ def cart():
 
     with current_app.app_context():
         # Fetch the user's orders and join with the movies table to get movie names
-        orders = list(db.orders.aggregate(
+        orders = list(db.orders.aggregate([
             {"$match": {"users_id": ObjectId(user_id)}},
-
-            # Perform the join to retrieve movie details
             {"$lookup": {
                 "from": "Movies",
                 "localField": "movie_id",
                 "foreignField": "_id",
                 "as": "movie_details"
             }},
-
             {"$unwind": "$movie_details"},
-
             {"$addFields": {"movie_name": "$movie_details.title"}},
-
             {"$project": {
                 "movie_name": 1,
                 "total_price": 1,
                 "order_timestamp": 1
             }}
-        ))
+        ]))
 
         total_sum = sum(order.get("total_price", 0) for order in orders)
 

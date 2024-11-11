@@ -93,6 +93,27 @@ def single(id):
             review_check = db.reviews.count_documents({"users_id": user_id, "movies_id": ObjectId(id)})
             review_exists = review_check > 0
 
+            # Find the most recent purchase timestamp for this movie by the user
+            purchase = db.purchases.find_one({"users_id": ObjectId(user_id)})
+            if purchase:
+                history = db.history.find_one({
+                    "purchase_id": ObjectId(purchase["_id"]),
+                    "movie_id": ObjectId(id)
+                })
+                print(purchase["_id"])
+                print(id)
+                
+                if history:
+                    purchase_timestamp = purchase["purchase_timestamp"]
+                    rental_expiry = purchase_timestamp + timedelta(days=rental_period_days)
+                    is_active = rental_expiry >= datetime.now()
+
+                    # Pass rental_expiry to the template
+                    rental_expiry = rental_expiry.strftime('%d-%m-%Y')  # Formatting the date as required
+                else:
+                    rental_expiry = None
+                    is_active = False
+
         else:
             movie = db.Movies.find_one({"_id": ObjectId(id)}), {"name": 1, "genres": 1, "language": 1, "description": 1}
             if not movie:
@@ -102,7 +123,7 @@ def single(id):
             reviews = list(db.Reviews.find({"movies_id": ObjectId(id)}).sort("timestamp", -1))
 
         return render_template('movie/single.html', movie=movie[0], review_exists=review_exists, reviews=reviews,
-                               user_id=user_id)
+                               user_id=user_id, is_active=is_active, rental_expiry=rental_expiry)
 
 
 # Api to add movies, won't render any page

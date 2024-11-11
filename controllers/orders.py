@@ -1,8 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
-from sqlalchemy import text
-from config.dbConnect import db
 from datetime import datetime
-from models.order import Order
+from bson import ObjectId
 
 orders_bp = Blueprint('orders', __name__, url_prefix='/orders')
 
@@ -11,6 +9,7 @@ orders_bp = Blueprint('orders', __name__, url_prefix='/orders')
 def post_add_order():
     rq = request.form
     movie_id = rq.get('movie_id')
+    db = current_app.mongo.db
 
     with current_app.app_context():
         # Check if the user is logged in
@@ -21,25 +20,19 @@ def post_add_order():
         user_id = session['user_id']
 
         # Fetch the movie to get the price
-        sql = text("SELECT price FROM movies WHERE id = :movie_id")
-        result = db.session.execute(sql, {"movie_id": movie_id})
-        movie = result.fetchone()
-
+        movie = db.Movies.find_one({"_id": ObjectId(movie_id)}, {"price": 1})
+        
         if movie:
-            total_price = movie.price
+            total_price = movie['price']
 
-            # Insert the order into the orders table
-            sql_order = text(
-                "INSERT INTO orders (movie_id, order_timestamp, total_price, users_id) "
-                "VALUES (:movie_id, :order_timestamp, :total_price, :users_id)"
-            )
-            db.session.execute(sql_order, {
-                "movie_id": movie_id,
-                "order_timestamp": datetime.utcnow(),
+            # Insert the order into the orders collection
+            order = {
+                "movie_id": ObjectId(movie_id),
+                "order_timestamp": datetime.now(),
                 "total_price": total_price,
-                "users_id": user_id
-            })
-            db.session.commit()
+                "users_id": ObjectId(user_id)
+            }
+            db.orders.insert_one(order)
 
             flash('Movie added to cart successfully.', 'success')
             return redirect(request.referrer)
@@ -51,29 +44,29 @@ def post_add_order():
 @orders_bp.route('/api/remove', methods=['POST'])
 def remove_movie():
     order_id = request.form.get('order_id')
+    db = current_app.mongo.db
 
     if order_id:
-        # Query the database to find the order by ID
-        order = Order.query.filter_by(id=order_id).first()
+        # Remove the order from the orders collection
+        result = db.orders.delete_one({"_id": ObjectId(order_id)})
 
-        if order:
-            # Remove the order from the database
-            db.session.delete(order)
-            db.session.commit()
-            # Redirect back to the cart page after removal
-            return redirect(url_for('user.cart'))  # Replace 'cart_page' with the correct view function name
-
-    flash('Order not found', 'error')
-    # If order is not found, redirect to the cart page
-    return redirect(url_for('user.cart'))  # Replace 'cart_page' with the correct view function name
+        if result.deleted_count > 0:
+            flash('Movie removed from cart successfully.', 'success')
+            return redirect(url_for('user.cart'))
+        else:
+            flash('Order not found', 'error')
+            return redirect(url_for('user.cart'))
 
 
 @orders_bp.route('/api/clear-all', methods=['POST'])
 def clear_all():
+    db = current_app.mongo.db
+
     if 'user_id' in session:
         user_id = session.get('user_id')
-        db.session.query(Order).filter_by(users_id=user_id).delete()
-        db.session.commit()
+        
+        # Remove all orders associated with the user
+        db.orders.delete_many({"users_id": ObjectId(user_id)})
 
         flash('Cart cleared', 'success')
         return redirect(url_for('user.cart'))
