@@ -77,46 +77,80 @@ def index():
     top_movies = list(top_movies_cursor)
 
     # Personalized recommendations based on user's most-watched genre
-    # if user_id:
-    #     # Find user's most-watched genre
-    #     most_watched_genre = db.history.aggregate([
-    #         {"$match": {"user_id": ObjectId(user_id)}},
-    #         {"$lookup": {
-    #             "from": "movies",
-    #             "localField": "movie_id",
-    #             "foreignField": "_id",
-    #             "as": "movie"
-    #         }},
-    #         {"$unwind": "$movie"},
-    #         {"$group": {
-    #             "_id": "$movie.genre",
-    #             "count": {"$sum": 1}
-    #         }},
-    #         {"$sort": {"count": DESCENDING}},
-    #         {"$limit": 1}
-    #     ])
-    #     most_watched_genre = list(most_watched_genre)
+    if user_id:
+        # Find user's most-watched genre
+        most_watched_genre = db.history.aggregate([
+            {"$lookup": {
+                "from": "purchases",
+                "localField": "purchase_id",  # Match the purchase_id from history
+                "foreignField": "_id",  # Match with _id in purchases
+                "as": "purchase"
+            }},
+            
+            {"$unwind": "$purchase"},
+            {"$match": {"purchase.users_id": ObjectId(user_id)}},
+            
+            {"$lookup": {
+                "from": "Movies",
+                "localField": "movie_id",  # Match the movie_id from history
+                "foreignField": "_id",  # Match with _id in Movies
+                "as": "movie"
+            }},
+            
+            {"$unwind": "$movie"},
+            
+            # Split the movie genres into an array
+            {"$addFields": {
+                "movie_genres": {
+                    "$split": ["$movie.genres", ", "]
+                }
+            }},
+            
+            {"$unwind": "$movie_genres"},
+            
+            # Group by genre and their frequency
+            {"$group": {
+                "_id": "$movie_genres",  # Group by individual genre
+                "count": {"$sum": 1}  # Count how many times each genre has been watched
+            }},
+            
+            {"$sort": {"count": -1}},
+            # Get the top 3 most watched genres for user
+            {"$limit": 3}
+        ])
+        most_watched_genre = list(most_watched_genre)
 
-    #     if most_watched_genre:
-    #         genre = most_watched_genre[0]["_id"]
-    #         recommendations_cursor = db.movies.aggregate([
-    #             {"$match": {
-    #                 "genre": genre,
-    #                 "_id": {"$nin": [history["movie_id"] for history in db.history.find({"user_id": ObjectId(user_id)})]}
-    #             }},
-    #             {"$lookup": {
-    #                 "from": "reviews",
-    #                 "localField": "_id",
-    #                 "foreignField": "movies_id",
-    #                 "as": "reviews"
-    #             }},
-    #             {"$addFields": {
-    #                 "avg_rating": {"$avg": "$reviews.rating"}
-    #             }},
-    #             {"$sort": {"avg_rating": DESCENDING}},
-    #             {"$limit": 30}
-    #         ])
-    #         recommendations = list(recommendations_cursor)
+        if most_watched_genre:
+            genres = [genre_entry["_id"] for genre_entry in most_watched_genre]  # Extract all genres
+
+            # Fetch all movie IDs the user has watched to exclude from recommendations
+            watched_movies = set(
+                history["movie_id"] for history in db.history.find({"user_id": ObjectId(user_id)})
+            )
+
+            recommendations_cursor = db.Movies.aggregate([
+                {"$match": {
+                    "_id": {"$nin": list(watched_movies)}  # Exclude movies the user has already watched
+                }},
+                {"$addFields": {
+                    "genres_array": {"$split": ["$genres", ", "]},  # Split the genres string into an array
+                }},
+                {"$match": {
+                    "genres_array": {"$in": genres}  # Match movies where any of the genres in the array match
+                }},
+                {"$lookup": {
+                    "from": "reviews",
+                    "localField": "_id",
+                    "foreignField": "movies_id",
+                    "as": "reviews"
+                }},
+                {"$addFields": {
+                    "avg_rating": {"$ifNull": [{"$avg": "$reviews.rating"}, 0]}  # Default to 0 if no reviews
+                }},
+                {"$sort": {"avg_rating": -1}},  # Sort by average rating (highest first)
+                {"$limit": 30}  # Limit to top 30 recommendations
+            ])
+            recommendations = list(recommendations_cursor)
 
     return render_template('index.html',
                            movies=movies,
