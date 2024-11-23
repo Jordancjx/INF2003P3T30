@@ -36,8 +36,17 @@ def setup_indexes():
 
     db.reviews.create_index([("movies_id", 1)])  # Index for movies_id
     db.reviews.create_index([("users_id", 1)])  # Index for users_id
-    
-    
+
+    db.threads.create_index([("_id", 1)])  # Default index
+    db.threads.create_index([("users_id", 1)])  # Index for users creating threads
+
+    db.posts.create_index([("thread_id", 1)])  # Index for post related to thread
+    db.posts.create_index([("users_id", 1)])  # Index for users_id
+
+    db.orders.create_index([("movie_id", 1)])  # Index movie_id
+    db.orders.create_index([("users_id", 1)])  # Index for users_id
+
+
     
     print("Indexes created successfully!")
 
