@@ -27,6 +27,20 @@ app.mongo = mongo  # Adding mongo to the app instance to resolve AttributeError
 # Init toastr
 toastr = Toastr(app)
 
+def setup_indexes():
+    db = app.mongo.db
+
+    db.Movies.create_index([("_id", 1)])  # Default index on _id
+    db.Movies.create_index([("title", 1)])  # Index for title
+    db.Movies.create_index([("users_id", 1)])  # Index for title
+
+    db.reviews.create_index([("movies_id", 1)])  # Index for movies_id
+    db.reviews.create_index([("users_id", 1)])  # Index for users_id
+    
+    
+    
+    print("Indexes created successfully!")
+
 # Register blueprints
 app.register_blueprint(index_bp)
 app.register_blueprint(movies_bp)
@@ -43,5 +57,6 @@ if __name__ == '__main__':
     app.debug = True
     app.permanent_session_lifetime = timedelta(hours=2)
     app.secret_key = config.constants.app_secret_key
-
+    setup_indexes()
+    
     app.run()
