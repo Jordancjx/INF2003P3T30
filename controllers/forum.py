@@ -1,9 +1,6 @@
 from flask import Blueprint, render_template, current_app, request, jsonify, session, redirect, url_for, flash
 import config.constants
-from config.dbConnect import db
-from models.user import User
-from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import text
+from config.dbConnect import get_db
 from datetime import datetime, timezone
 from bson import ObjectId
 
@@ -13,11 +10,11 @@ forum_bp = Blueprint('forum', __name__, template_folder=config.constants.templat
 
 # Dashboard
 @forum_bp.route('/')
-def index():
-    db = current_app.mongo.db
+async def index():
+    db = await get_db()
 
     # fetch all threads with user information
-    threads = list(db.threads.aggregate([
+    threads = await db.threads.aggregate([
         {
             "$lookup": {
                 "from": "users",
@@ -40,19 +37,19 @@ def index():
             }
         }
 
-    ]))
+    ]).to_list(length=None)
 
     return render_template('/forum/forum.html', threads=threads)
 
 
 # Single page for threads
 @forum_bp.route('/single/<string:id>', methods=["GET"])
-def single(id):
-    db = current_app.mongo.db
+async def single(id):
+    db = await get_db()
 
     try:
         # Fetch single thread with user info
-        thread = db.threads.aggregate([
+        thread = await db.threads.aggregate([
             {"$match": {"_id": ObjectId(id)}},
             {
                 "$lookup": {
@@ -81,7 +78,7 @@ def single(id):
         ]).next()
 
         # Fetch posts for the threads with user info
-        posts = list(db.posts.aggregate([
+        posts = await db.posts.aggregate([
             {"$match": {"thread_id": ObjectId(id)}},
             {
                 "$lookup": {
@@ -105,7 +102,7 @@ def single(id):
                     "user_info.admin_controls": 1
                 }
             }
-        ]))
+        ]).to_list(length=None)
 
         return render_template('/forum/single.html', thread=thread, posts=posts)
 
@@ -117,8 +114,8 @@ def single(id):
 
 # Create Thread API, Does not render any page
 @forum_bp.route('/api/create', methods=["POST"])
-def createThread():
-    db = current_app.mongo.db
+async def createThread():
+    db = await get_db()
 
     try:
         # Ensure user is logged in
@@ -133,7 +130,7 @@ def createThread():
             "created_time": datetime.now(timezone.utc),
             "edited": False
         }
-        db.threads.insert_one(thread_data)
+        await db.threads.insert_one(thread_data)
         flash('Your thread has been posted!', 'success')
         return redirect(url_for('forum.index'))
 
@@ -145,8 +142,8 @@ def createThread():
 
 # Reply API, Does not render any page
 @forum_bp.route('/api/reply', methods=["POST"])
-def reply():
-    db = current_app.mongo.db
+async def reply():
+    db = await get_db()
 
     try:
         # Ensure user is logged in
@@ -162,7 +159,7 @@ def reply():
             "edited": False
 
         }
-        db.posts.insert_one(post_data)
+        await db.posts.insert_one(post_data)
         flash('Your reply has been posted!', 'success')
         return redirect(url_for('forum.single', id=request.form.get("thread_id")))
 
@@ -175,8 +172,8 @@ def reply():
 
 # Delete Thread API, Does not render any page
 @forum_bp.route('/api/delete/<string:id>', methods=["GET"])
-def deleteThread(id):
-    db = current_app.mongo.db
+async def deleteThread(id):
+    db = await get_db()
 
     try:
         # Ensure user is logged in
@@ -184,8 +181,8 @@ def deleteThread(id):
             flash('You must be logged in to delete thread.', 'error')
             return redirect(url_for('forum.index'))
 
-        db.threads.delete_one({"_id": ObjectId(id)})
-        db.posts.delete_many({"thread_id": ObjectId(id)})
+        await db.threads.delete_one({"_id": ObjectId(id)})
+        await db.posts.delete_many({"thread_id": ObjectId(id)})
         flash('Your thread has been deleted!', 'success')
         return redirect(url_for('forum.index'))
 
@@ -196,8 +193,8 @@ def deleteThread(id):
 
 # Delete Reply API, Does not render any page
 @forum_bp.route('/api/deletereply/<string:id>/<string:thread_id>', methods=["GET"])
-def deleteReply(id, thread_id):
-    db = current_app.mongo.db
+async def deleteReply(id, thread_id):
+    db = await get_db()
     # with current_app.app_context():
     try:
         # Ensure user is logged in
@@ -205,7 +202,7 @@ def deleteReply(id, thread_id):
             flash('You must be logged in to delete thread.', 'error')
             return redirect(url_for('forum.single', id=thread_id))
 
-        db.posts.delete_one({"_id": ObjectId(id)})
+        await db.posts.delete_one({"_id": ObjectId(id)})
         flash('You reply has been deleted!', 'success')
         return redirect(url_for('forum.single', id=thread_id))
 
@@ -216,8 +213,8 @@ def deleteReply(id, thread_id):
 
 # Edit Thread API, Does not render any page
 @forum_bp.route('/api/editThread', methods=["POST"])
-def editThread():
-    db = current_app.mongo.db
+async def editThread():
+    db = await get_db()
 
     try:
         # Ensure user is logged in
@@ -225,7 +222,7 @@ def editThread():
             flash('You must be logged in to create a thread.', 'error')
             return redirect(url_for('forum.index'))
 
-        db.threads.update_one(
+        await db.threads.update_one(
             {"_id": ObjectId(request.form.get("thread_id"))},
             {
                 "$set": {
@@ -248,8 +245,8 @@ def editThread():
 
 # Edit Reply API, Does not render any page
 @forum_bp.route('/api/editReply', methods=["POST"])
-def editReply():
-    db = current_app.mongo.db
+async def editReply():
+    db = await get_db()
     # current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     # with current_app.app_context():
     try:
@@ -258,7 +255,7 @@ def editReply():
             flash('You must be logged in to create a thread.', 'error')
             return redirect(url_for('forum.index'))
 
-        db.posts.update_one(
+        await db.posts.update_one(
             {"_id": ObjectId(request.form.get("post_id"))},
             {
                 "$set": {

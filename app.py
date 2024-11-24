@@ -1,7 +1,8 @@
+import asyncio
 from flask import Flask
-from flask_pymongo import PyMongo
 from flask_toastr import Toastr
 from datetime import timedelta
+from config.dbConnect import get_db
 from controllers.movie import movies_bp
 from controllers.index import index_bp
 from controllers.admin import admin_bp
@@ -18,37 +19,31 @@ import config.constants
 app = Flask(__name__, template_folder=config.constants.template_dir, static_folder=config.constants.static_dir,
             static_url_path='/public')
 
-# Setup DB
-app.config['MONGO_URI'] = config.constants.mongo_uri
-mongo = PyMongo(app)
-
-app.mongo = mongo  # Adding mongo to the app instance to resolve AttributeError
-
 # Init toastr
 toastr = Toastr(app)
 
-def setup_indexes():
-    db = app.mongo.db
 
-    db.Movies.create_index([("_id", 1)])  # Default index on _id
-    db.Movies.create_index([("title", 1)])  # Index for title
-    db.Movies.create_index([("users_id", 1)])  # Index for title
+async def setup_indexes():
+    db = await get_db()
 
-    db.reviews.create_index([("movies_id", 1)])  # Index for movies_id
-    db.reviews.create_index([("users_id", 1)])  # Index for users_id
+    await db.Movies.create_index([("_id", 1)])  # Default index on _id
+    await db.Movies.create_index([("title", 1)])  # Index for title
+    await db.Movies.create_index([("users_id", 1)])  # Index for title
 
-    db.threads.create_index([("_id", 1)])  # Default index
-    db.threads.create_index([("users_id", 1)])  # Index for users creating threads
+    await db.reviews.create_index([("movies_id", 1)])  # Index for movies_id
+    await db.reviews.create_index([("users_id", 1)])  # Index for users_id
 
-    db.posts.create_index([("thread_id", 1)])  # Index for post related to thread
-    db.posts.create_index([("users_id", 1)])  # Index for users_id
+    await db.threads.create_index([("_id", 1)])  # Default index
+    await db.threads.create_index([("users_id", 1)])  # Index for users creating threads
 
-    db.orders.create_index([("movie_id", 1)])  # Index movie_id
-    db.orders.create_index([("users_id", 1)])  # Index for users_id
+    await db.posts.create_index([("thread_id", 1)])  # Index for post related to thread
+    await db.posts.create_index([("users_id", 1)])  # Index for users_id
 
+    await db.orders.create_index([("movie_id", 1)])  # Index movie_id
+    await db.orders.create_index([("users_id", 1)])  # Index for users_id
 
-    
     print("Indexes created successfully!")
+
 
 # Register blueprints
 app.register_blueprint(index_bp)
@@ -66,6 +61,11 @@ if __name__ == '__main__':
     app.debug = True
     app.permanent_session_lifetime = timedelta(hours=2)
     app.secret_key = config.constants.app_secret_key
-    setup_indexes()
+
+    loop = asyncio.get_event_loop()
+    if loop.is_running():
+        loop.create_task(setup_indexes())
+    else:
+        loop.run_until_complete(setup_indexes())
     
     app.run()

@@ -1,9 +1,9 @@
 from bson import ObjectId
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
 import config.constants
+from config.dbConnect import get_db
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from config.dbConnect import db
 import os
 
 UPLOAD_FOLDER = 'public/profile_pics'  # Ensure this folder exists
@@ -40,63 +40,61 @@ def logout():
 
 # Profile
 @user_bp.route('/profile')
-def getProfile():
-    db = current_app.mongo.db
+async def getProfile():
+    db = await get_db()
 
     # Check if user is logged in
     if 'user_id' not in session:
         flash("Please log in to view your profile.", "error")
         return redirect(url_for('user.login'))
 
-    with current_app.app_context():
-        user = db.users.find_one({"_id": ObjectId(session['user_id'])})
+    user = await db.users.find_one({"_id": ObjectId(session['user_id'])})
 
-        if user is None:
-            flash("User not found.", "error")
-            return redirect(url_for('user.login'))
+    if user is None:
+        flash("User not found.", "error")
+        return redirect(url_for('user.login'))
 
     return render_template('/user/profile.html', user=user)
 
 
 # cart
 @user_bp.route('/cart')
-def cart():
+async def cart():
     # Check if user is logged in
     if 'user_id' not in session:
         flash("Please log in to view your cart.", "error")
         return redirect(url_for('user.login'))
 
     user_id = session['user_id']
-    db = current_app.mongo.db
+    db = await get_db()
 
-    with current_app.app_context():
-        # Fetch the user's orders and join with the movies table to get movie names
-        orders = list(db.orders.aggregate([
-            {"$match": {"users_id": ObjectId(user_id)}},
-            {"$lookup": {
-                "from": "Movies",
-                "localField": "movie_id",
-                "foreignField": "_id",
-                "as": "movie_details"
-            }},
-            {"$unwind": "$movie_details"},
-            {"$addFields": {"movie_name": "$movie_details.title"}},
-            {"$project": {
-                "movie_name": 1,
-                "total_price": 1,
-                "order_timestamp": 1
-            }}
-        ]))
+    # Fetch the user's orders and join with the movies table to get movie names
+    orders = await db.orders.aggregate([
+        {"$match": {"users_id": ObjectId(user_id)}},
+        {"$lookup": {
+            "from": "Movies",
+            "localField": "movie_id",
+            "foreignField": "_id",
+            "as": "movie_details"
+        }},
+        {"$unwind": "$movie_details"},
+        {"$addFields": {"movie_name": "$movie_details.title"}},
+        {"$project": {
+            "movie_name": 1,
+            "total_price": 1,
+            "order_timestamp": 1
+        }}
+    ]).to_list(length=None)
 
-        total_sum = sum(order.get("total_price", 0) for order in orders)
+    total_sum = sum(order.get("total_price", 0) for order in orders)
 
-        # Pass the fetched data to the cart template
-        return render_template('/user/cart.html', orders=orders, total_sum=total_sum)
+    # Pass the fetched data to the cart template
+    return render_template('/user/cart.html', orders=orders, total_sum=total_sum)
 
 
 # Register API; Does not render any page
 @user_bp.route('/api/register', methods=["POST"])
-def register_process():
+async def register_process():
     hashed_password = generate_password_hash(request.form.get('password'), method='pbkdf2:sha256', salt_length=16)
     username = request.form.get('username')
     fname = request.form.get('fname')
@@ -107,8 +105,8 @@ def register_process():
         flash("Information missing", "error")
         return redirect(url_for('user.register'))
 
-    db = current_app.mongo.db
-    existing_user = db.users.find_one({"$or": [{"username": username}, {"email": email}]})
+    db = await get_db()
+    existing_user = await db.users.find_one({"$or": [{"username": username}, {"email": email}]})
 
     if existing_user:
         flash("Username or Email already exists", "error")
@@ -125,7 +123,7 @@ def register_process():
     }
 
     try:
-        db.users.insert_one(user_data)
+        await db.users.insert_one(user_data)
         flash('Registered successfully!', 'success')
         return redirect(url_for('user.login'))
 
@@ -136,12 +134,12 @@ def register_process():
 
 # Login API; Does not render any page
 @user_bp.route('/api/login', methods=["POST"])
-def login_process():
+async def login_process():
     identifier = request.form.get('username')  # This could be either email or username
     password = request.form.get('password')
 
-    db = current_app.mongo.db
-    user = db.users.find_one({"$or": [{"username": identifier}, {"email": identifier}]})
+    db = await get_db()
+    user = await db.users.find_one({"$or": [{"username": identifier}, {"email": identifier}]})
 
     if user and check_password_hash(user['password'], password):
         if user.get('admin_controls', False):
@@ -157,7 +155,7 @@ def login_process():
 
 
 @user_bp.route('/api/update_profile', methods=["POST"])
-def update_profile():
+async def update_profile():
     if 'user_id' not in session:
         flash("Please log in to update your profile.", "error")
         return redirect(url_for('user.login'))
@@ -179,37 +177,38 @@ def update_profile():
                 file.save(file_path)
                 profile_pic_url = f"/{file_path}"
 
-    with current_app.app_context():
-        try:
-            update_data = {
-                "fname": fname,
-                "lname": lname,
-                "email": email,
-            }
+    db = await get_db()
 
-            if profile_pic_url:
-                update_data["profile_pic_url"] = profile_pic_url
+    try:
+        update_data = {
+            "fname": fname,
+            "lname": lname,
+            "email": email,
+        }
 
-            if password:
-                user = db.users.find_one({"_id": ObjectId(user_id)})
-                stored_password = user.get("password")
+        if profile_pic_url:
+            update_data["profile_pic_url"] = profile_pic_url
 
-                if not check_password_hash(stored_password, old_password):
-                    flash('Incorrect old password', 'error')
-                    return redirect(url_for('user.getProfile'))
+        if password:
+            user = await db.users.find_one({"_id": ObjectId(user_id)})
+            stored_password = user.get("password")
 
-                hashed_password = generate_password_hash(password)
-                update_data["password"] = hashed_password
+            if not check_password_hash(stored_password, old_password):
+                flash('Incorrect old password', 'error')
+                return redirect(url_for('user.getProfile'))
 
-            db.users.update_one(
-                {"_id": ObjectId(user_id)},
-                {"$set": update_data}
-            )
+            hashed_password = generate_password_hash(password)
+            update_data["password"] = hashed_password
 
-            flash("Profile updated successfully!", "success")
-            return redirect(url_for('user.getProfile'))
+        await db.users.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": update_data}
+        )
 
-        except Exception as e:
-            print(e)
-            flash("An error occurred while updating the profile", "error")
-            return redirect(url_for('user.getProfile'))
+        flash("Profile updated successfully!", "success")
+        return redirect(url_for('user.getProfile'))
+
+    except Exception as e:
+        print(e)
+        flash("An error occurred while updating the profile", "error")
+        return redirect(url_for('user.getProfile'))
