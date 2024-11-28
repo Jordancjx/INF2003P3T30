@@ -16,6 +16,9 @@
             <a href="/forum/single/{{thread._id}}" class="d-flex flex-column list-group-item list-group-item-action" aria-current="true">
               <div><h3 class = "mt-2">{{thread.title}}</h3></div>
               <div><p>Created by {{thread.user_info.username}} on {{thread.created_time|format_datetime}}</div>
+              {% if thread.edited == 1 %}
+              <div>Edited on: {{thread.edited_time|format_datetime}}</div>
+              {%endif%}
             </a>
             {%endfor%}
           </div>

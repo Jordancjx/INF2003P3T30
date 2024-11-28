@@ -33,7 +33,8 @@ async def index():
                 "content": 1,
                 "created_time": 1,
                 "user_info.username": 1,
-                "user_info._id": 1
+                "user_info._id": 1,
+                "edited_time": 1,
             }
         }
 
@@ -72,7 +73,9 @@ async def single(id):
                     "user_info.username": 1,
                     "user_info.email": 1,
                     "user_info.profile_pic_url": 1,
-                    "user_info.admin_controls": 1
+                    "user_info.admin_controls": 1,
+                    "edited": 1,
+                    "edited_time": 1,
                 }
             }
         ]).next()
@@ -99,7 +102,9 @@ async def single(id):
                     "user_info.username": 1,
                     "user_info.email": 1,
                     "user_info.profile_pic_url": 1,
-                    "user_info.admin_controls": 1
+                    "user_info.admin_controls": 1,
+                    "edited": 1,
+                    "edited_time": 1,
                 }
             }
         ]).to_list(length=None)
