@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, flash, request, redirect, current_app, url_for, session
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session
 import config.constants
-from config.dbConnect import get_db
+from config.dbConnect import get_db, get_client_and_db
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timedelta
@@ -131,37 +131,39 @@ async def post_add_movie():
         flash('You must be logged in as an admin to add a movie.', 'error')
         return redirect(url_for('index.index'))
 
-    db = await get_db()
+    client, db = await get_client_and_db()
 
-    try:
-        poster_url = None
-        if 'image_file' in request.files:
-            file = request.files['image_file']
-            if file.filename != '':
-                if file and allowed_file(file.filename):
-                    filename = secure_filename(file.filename)
-                    file_path = os.path.join(UPLOAD_FOLDER, filename)
-                    file.save(file_path)
-                    poster_url = f"/{file_path}"
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                poster_url = None
+                if 'image_file' in request.files:
+                    file = request.files['image_file']
+                    if file.filename != '':
+                        if file and allowed_file(file.filename):
+                            filename = secure_filename(file.filename)
+                            file_path = os.path.join(UPLOAD_FOLDER, filename)
+                            file.save(file_path)
+                            poster_url = f"/{file_path}"
 
-        movie_document = {
-            "title": request.form.get('moviename'),
-            "overview": request.form.get("synopsis"),
-            "release_date": request.form.get("release_date"),
-            "runtime": request.form.get("runtime"),
-            "price": request.form.get("price"),
-            "poster_path": poster_url,
-            "trailer_link": request.form.get("trailer_link")
-        }
+                movie_document = {
+                    "title": request.form.get('moviename'),
+                    "overview": request.form.get("synopsis"),
+                    "release_date": request.form.get("release_date"),
+                    "runtime": request.form.get("runtime"),
+                    "price": request.form.get("price"),
+                    "poster_path": poster_url,
+                    "trailer_link": request.form.get("trailer_link")
+                }
 
-        await db.Movies.insert_one(movie_document)
+                await db.Movies.insert_one(movie_document, session=client_session)
 
-        flash('Movie has been added.', 'success')
-        return redirect(url_for('movie.add'))
-    except Exception as e:
-        print(e)
-        flash('An error has occurred.', 'error')
-        return redirect(url_for('movie.add'))
+                flash('Movie has been added.', 'success')
+                return redirect(url_for('movie.add'))
+            except Exception as e:
+                print(e)
+                flash('An error has occurred.', 'error')
+                return redirect(url_for('movie.add'))
 
 
 # Api to update movies, won't render any page
@@ -170,28 +172,36 @@ async def post_update_movie():
     rq = request.form
     id = rq.get('movie_id')
 
-    db = await get_db()
+    client, db = await get_client_and_db()
 
-    movie = await db.Movies.find_one({"_id": ObjectId(id)})
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                movie = await db.Movies.find_one({"_id": ObjectId(id)})
 
-    if movie:
-        updated_fields = {
-            "title": rq.get('moviename'),
-            "overview": rq.get('synopsis'),
-            "price": rq.get('price'),
-            "runtime": rq.get('runtime'),
-            "release_date": rq.get('release_date')
-        }
+                if movie:
+                    updated_fields = {
+                        "title": rq.get('moviename'),
+                        "overview": rq.get('synopsis'),
+                        "price": rq.get('price'),
+                        "runtime": rq.get('runtime'),
+                        "release_date": rq.get('release_date')
+                    }
 
-        await db.Movies.update_one(
-            {"_id": ObjectId(id)},
-            {"$set": updated_fields}
-        )
+                    await db.Movies.update_one(
+                        {"_id": ObjectId(id)},
+                        {"$set": updated_fields}, session=client_session
+                    )
 
-        return redirect(url_for('movie.single', id=id))
-    else:
-        flash('Movie not found', 'error')
-        return redirect(url_for('index.index'))
+                    return redirect(url_for('movie.single', id=id))
+                else:
+                    flash('Movie not found', 'error')
+                    return redirect(url_for('index.index'))
+
+            except Exception as e:
+                print(e)
+                flash('An error has occurred.', 'error')
+                return redirect(url_for('movie.update_movie', id=id))
 
 
 @movies_bp.route('/update/<string:id>')
@@ -209,20 +219,23 @@ async def update_movie(id):
 
 @movies_bp.route('/api/delete/<string:id>', methods=['POST'])
 async def delete_movie(id):
-    db = await get_db()
+    client, db = await get_client_and_db()
 
-    movie = await db.Movies.find_one({"_id": ObjectId(id)})
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                movie = await db.Movies.find_one({"_id": ObjectId(id)})
 
-    if movie is None:
-        flash('Movie not found', 'error')
-        return redirect(url_for('index.index'))
+                if movie is None:
+                    flash('Movie not found', 'error')
+                    return redirect(url_for('index.index'))
 
-    result = await db.Movies.delete_one({"_id": ObjectId(id)})
+                await db.Movies.delete_one({"_id": ObjectId(id)}, session=client_session)
 
-    if result.deleted_count > 0:
-        flash('Movie deleted successfully!', 'success')
-        return redirect(url_for('index.index'))
+                flash('Movie deleted successfully!', 'success')
+                return redirect(url_for('index.index'))
 
-    else:
-        flash('Error while deleting movie', 'error')
-        return redirect(url_for('index.index'))
+            except Exception as e:
+                print(e)
+                flash('An error has occurred.', 'error')
+                return redirect(url_for('index.index'))

@@ -1,7 +1,7 @@
 from bson import ObjectId
-from flask import Blueprint, render_template, current_app, request, jsonify, session, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 import config.constants
-from config.dbConnect import get_db
+from config.dbConnect import get_db, get_client_and_db
 
 admin_bp = Blueprint('admin', __name__, template_folder=config.constants.template_dir,
                      static_folder=config.constants.static_dir, static_url_path='/public', url_prefix='/admin')
@@ -19,40 +19,52 @@ async def adminIndex():
 # Delete User API
 @admin_bp.route('/delete_user', methods=["POST"])
 async def deleteUser():
-    db = await get_db()
+    client, db = await get_client_and_db()
 
-    result = await db.users.delete_one({"_id": ObjectId(id)})
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                await db.users.delete_one({"_id": ObjectId(id)}, session=client_session)
+                flash('User deleted successfully!')
+                return redirect(url_for('admin.adminIndex'))
 
-    if result.deleted_count > 0:
-        flash('User deleted successfully!')
-
-    else:
-        flash('Error deleting user')
-
-    return redirect(url_for('admin.adminIndex'))
-
+            except Exception:
+                flash('Error deleting user', 'error')
+                return redirect(url_for('admin.adminIndex'))
 
 # Make User Admin
 @admin_bp.route('/admin_user', methods=["POST"])
 async def adminUser():
-    db = await get_db()
+    client, db = await get_client_and_db()
 
-    await db.users.update_one({"_id": ObjectId(request.form.get('user_id'))},
-                              {'$set': {"admin_controls": 1}})
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                await db.users.update_one({"_id": ObjectId(request.form.get('user_id'))},
+                                          {'$set': {"admin_controls": 1}}, session=client_session)
 
-    flash('Granted admin privileges successfully!')
+                flash('Granted admin privileges successfully!', 'success')
+                return redirect(url_for('admin.adminIndex'))
 
-    return redirect(url_for('admin.adminIndex'))
+            except Exception:
+                flash('Error granting privileges', 'error')
+                return redirect(url_for('admin.adminIndex'))
 
 
 # Revoke Admin Access
 @admin_bp.route('/revoke_admin', methods=["POST"])
 async def revokeUser():
-    db = await get_db()
+    client, db = await get_client_and_db()
 
-    await db.users.update_one({"_id": ObjectId(request.form.get('user_id'))},
-                              {'$set': {"admin_controls": 0}})
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                await db.users.update_one({"_id": ObjectId(request.form.get('user_id'))},
+                                          {'$set': {"admin_controls": 0}}, session=client_session)
 
-    flash('Revoked admin privileges successfully')
+                flash('Revoked admin privileges successfully', 'success')
+                return redirect(url_for('admin.adminIndex'))
 
-    return redirect(url_for('admin.adminIndex'))
+            except Exception:
+                flash('Error revoking privileges', 'error')
+                return redirect(url_for('admin.adminIndex'))

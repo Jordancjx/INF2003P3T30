@@ -46,9 +46,9 @@
                 <div style="margin-top:auto">
                     <hr class="hr"/>
                     <div class="w-100 d-flex flex-row justify-content-between">
-                        <div>Created on: {{thread.created_time}}</div>
+                        <div>Created on: {{thread.created_time|format_datetime}}</div>
                         {% if thread.edited == 1 %}
-                        <div>Edited on: {{thread.edited_time}}</div>
+                        <div>Edited on: {{thread.edited_time|format_datetime}}</div>
                         {%endif%}
                     </div>
 
@@ -104,7 +104,7 @@
                             {%endif%}
                         </div>
                         <hr class="hr w-100"/>
-                        Replied on: {{post.posted_time}}
+                        Replied on: {{post.posted_time|format_datetime}}
                     </div>
 
                 </div>

@@ -11,3 +11,14 @@ async def get_db():
     except Exception as e:
         print('Error connecting to db')
         return None
+
+
+async def get_client_and_db():
+    try:
+        client = AsyncIOMotorClient(mongo_uri)
+        db = client[DB_NAME]
+        return client, db
+
+    except Exception as e:
+        print('Error connecting to db')
+        return None

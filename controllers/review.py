@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, current_app
 import config.constants
-from config.dbConnect import get_db
+from config.dbConnect import get_db, get_client_and_db
 from controllers.user import user_bp
 from bson import ObjectId
 
@@ -14,7 +14,7 @@ async def add():
     rating = int(request.form.get('rating'))
     movies_id = request.form.get('movie_id')
     users_id = session.get('user_id')
-    db = await get_db()
+    client, db = await get_client_and_db()
     
     review = {
         "body": body,
@@ -22,19 +22,21 @@ async def add():
         "movies_id" : ObjectId(request.form.get('movie_id')),
         "users_id": ObjectId(session.get('user_id'))
     }
-    
+
     if not users_id:
         flash("Please log in to post a review", "error")
         return redirect(url_for(user_bp.login))
 
-    try:
-        await db.reviews.insert_one(review)
-        flash('Review posted successfully!')
-        return redirect(url_for('movie.single', id=movies_id))
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                await db.reviews.insert_one(review, session=client_session)
+                flash('Review posted successfully!')
+                return redirect(url_for('movie.single', id=movies_id))
 
-    except Exception as e:
-        flash("An error has occurred", "error")
-        return redirect(url_for('movie.single', id=movies_id))
+            except Exception as e:
+                flash("An error has occurred", "error")
+                return redirect(url_for('movie.single', id=movies_id))
 
 
 @reviews_bp.route('/edit/<string:id>', methods=['GET'])
@@ -61,26 +63,28 @@ async def update():
     movie_id = ObjectId(request.form.get('movie_id'))
     users_id = ObjectId(session.get('user_id'))  # Get the current user ID
     review_id = ObjectId(request.form.get('review_id'))
-    try:
-        db = await get_db()
+    client, db = await get_client_and_db()
 
-        review = await db.reviews.find_one({"_id": review_id, "users_id": users_id})
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                review = await db.reviews.find_one({"_id": review_id, "users_id": users_id})
 
-        if review is None:
-            flash("You do not have permission to edit this review.", "error")
-            return redirect(url_for('movie.single', id=movie_id))
+                if review is None:
+                    flash("You do not have permission to edit this review.", "error")
+                    return redirect(url_for('movie.single', id=movie_id))
 
-        await db.reviews.update_one(
-            {"_id": review_id},  # Find the review by ID
-            {"$set": {"body": body, "rating": rating}}  # Set new body and rating
-        )
+                await db.reviews.update_one(
+                    {"_id": review_id},  # Find the review by ID
+                    {"$set": {"body": body, "rating": rating}}, session=client_session  # Set new body and rating
+                )
 
-        flash('Review updated successfully!')
-        return redirect(url_for('movie.single', id=movie_id))
+                flash('Review updated successfully!')
+                return redirect(url_for('movie.single', id=movie_id))
 
-    except Exception as e:
-        flash("An error occurred while updating the review", "error")
-        return redirect(url_for('movie.single', id=movie_id))
+            except Exception as e:
+                flash("An error occurred while updating the review", "error")
+                return redirect(url_for('movie.single', id=movie_id))
 
 
 @reviews_bp.route('/api/delete/<string:id>', methods=['POST'])
@@ -88,20 +92,21 @@ async def delete(id):
     users_id = ObjectId(session.get('user_id'))  # Get the current user ID
     review_id = ObjectId(id)
     movie_id = request.form.get('movie_id')
+    client, db = await get_client_and_db()
 
-    try:
-        db = await get_db()
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                review = await db.reviews.find_one({"_id": review_id, "users_id": users_id})
+                if not review:
+                    flash("You do not have permission to edit this review.", "error")
+                    return redirect(url_for('movie.single', id=movie_id))
 
-        review = await db.reviews.find_one({"_id": review_id, "users_id": users_id})
-        if not review:
-            flash("You do not have permission to edit this review.", "error")
-            return redirect(url_for('movie.single', id=movie_id))
+                await db.reviews.delete_one({"_id": review_id, "users_id": users_id}, session=client_session)
 
-        await db.reviews.delete_one({"_id": review_id, "users_id": users_id})
+                flash('Review deleted successfully!')
+                return redirect(url_for('movie.single', id=movie_id))
 
-        flash('Review deleted successfully!')
-        return redirect(url_for('movie.single', id=movie_id))
-
-    except Exception as e:
-        flash("An error occurred while updating the review", "error")
-        return redirect(url_for('movie.single', id=movie_id))
+            except Exception as e:
+                flash("An error occurred while updating the review", "error")
+                return redirect(url_for('movie.single', id=movie_id))

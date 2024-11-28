@@ -1,4 +1,6 @@
 import asyncio
+import datetime
+
 from flask import Flask
 from flask_toastr import Toastr
 from datetime import timedelta
@@ -55,6 +57,14 @@ app.register_blueprint(orders_bp)
 app.register_blueprint(purchases_bp)
 app.register_blueprint(rentals_bp)
 app.register_blueprint(forum_bp)
+
+
+@app.template_filter('format_datetime')
+def format_datetime(value, format="%Y-%m-%d %H:%M:%S"):
+    if isinstance(value, datetime.datetime):
+        return value.strftime(format)
+    return value
+
 
 if __name__ == '__main__':
     # App config

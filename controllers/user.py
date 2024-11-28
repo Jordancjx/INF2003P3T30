@@ -1,7 +1,7 @@
 from bson import ObjectId
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
 import config.constants
-from config.dbConnect import get_db
+from config.dbConnect import get_db, get_client_and_db
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
@@ -105,7 +105,7 @@ async def register_process():
         flash("Information missing", "error")
         return redirect(url_for('user.register'))
 
-    db = await get_db()
+    client, db = await get_client_and_db()
     existing_user = await db.users.find_one({"$or": [{"username": username}, {"email": email}]})
 
     if existing_user:
@@ -122,14 +122,16 @@ async def register_process():
         "admin_controls": False
     }
 
-    try:
-        await db.users.insert_one(user_data)
-        flash('Registered successfully!', 'success')
-        return redirect(url_for('user.login'))
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                await db.users.insert_one(user_data, session=client_session)
+                flash('Registered successfully!', 'success')
+                return redirect(url_for('user.login'))
 
-    except Exception as e:
-        flash('An error has occurred during registration.', "error")
-        return redirect(url_for('user.register'))
+            except Exception as e:
+                flash('An error has occurred during registration.', "error")
+                return redirect(url_for('user.register'))
 
 
 # Login API; Does not render any page
@@ -177,38 +179,40 @@ async def update_profile():
                 file.save(file_path)
                 profile_pic_url = f"/{file_path}"
 
-    db = await get_db()
+    client, db = await get_client_and_db()
 
-    try:
-        update_data = {
-            "fname": fname,
-            "lname": lname,
-            "email": email,
-        }
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                update_data = {
+                    "fname": fname,
+                    "lname": lname,
+                    "email": email,
+                }
 
-        if profile_pic_url:
-            update_data["profile_pic_url"] = profile_pic_url
+                if profile_pic_url:
+                    update_data["profile_pic_url"] = profile_pic_url
 
-        if password:
-            user = await db.users.find_one({"_id": ObjectId(user_id)})
-            stored_password = user.get("password")
+                if password:
+                    user = await db.users.find_one({"_id": ObjectId(user_id)})
+                    stored_password = user.get("password")
 
-            if not check_password_hash(stored_password, old_password):
-                flash('Incorrect old password', 'error')
+                    if not check_password_hash(stored_password, old_password):
+                        flash('Incorrect old password', 'error')
+                        return redirect(url_for('user.getProfile'))
+
+                    hashed_password = generate_password_hash(password)
+                    update_data["password"] = hashed_password
+
+                await db.users.update_one(
+                    {"_id": ObjectId(user_id)},
+                    {"$set": update_data}, session=client_session
+                )
+
+                flash("Profile updated successfully!", "success")
                 return redirect(url_for('user.getProfile'))
 
-            hashed_password = generate_password_hash(password)
-            update_data["password"] = hashed_password
-
-        await db.users.update_one(
-            {"_id": ObjectId(user_id)},
-            {"$set": update_data}
-        )
-
-        flash("Profile updated successfully!", "success")
-        return redirect(url_for('user.getProfile'))
-
-    except Exception as e:
-        print(e)
-        flash("An error occurred while updating the profile", "error")
-        return redirect(url_for('user.getProfile'))
+            except Exception as e:
+                print(e)
+                flash("An error occurred while updating the profile", "error")
+                return redirect(url_for('user.getProfile'))
