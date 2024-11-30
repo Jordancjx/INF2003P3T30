@@ -105,6 +105,9 @@
                         </div>
                         <hr class="hr w-100"/>
                         Replied on: {{post.posted_time|format_datetime}}
+                        {% if posts.edited == 1 %}
+                        Edited on: {{post.edited_time|format_datetime}}
+                        {%endif%}
                     </div>
 
                 </div>
