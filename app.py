@@ -78,4 +78,4 @@ if __name__ == '__main__':
     else:
         loop.run_until_complete(setup_indexes())
     
-    app.run()
+app.run(host='0.0.0.0', port=5000)
