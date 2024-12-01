@@ -15,22 +15,22 @@
     <div class="accordion" id="accordionExample2" style="box-shadow: none">
       {%for user in users%}
       <div class="accordion-item">
-        <h2 class="accordion-header" id="heading-{{user.id}}">
+        <h2 class="accordion-header" id="heading-{{user._id}}">
           <button
             class="accordion-button collapsed"
             type="button"
             data-bs-toggle="collapse"
-            data-bs-target="#collapse-{{user.id}}"
+            data-bs-target="#collapse-{{user._id}}"
             aria-expanded="false"
-            aria-controls="collapse-{{user.id}}"
+            aria-controls="collapse-{{user._id}}"
           >
             {{user.username}}
           </button>
         </h2>
         <div
-          id="collapse-{{user.id}}"
+          id="collapse-{{user._id}}"
           class="accordion-collapse collapse p-3"
-          aria-labelledby="heading-{{user.id}}"
+          aria-labelledby="heading-{{user._id}}"
           data-bs-parent="#accordionExample2"
         >
           <div class="table-responsive mb-3">

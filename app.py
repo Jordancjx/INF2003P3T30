@@ -1,7 +1,10 @@
+import asyncio
+import datetime
+
 from flask import Flask
 from flask_toastr import Toastr
 from datetime import timedelta
-from config.dbConnect import db
+from config.dbConnect import get_db
 from controllers.movie import movies_bp
 from controllers.index import index_bp
 from controllers.admin import admin_bp
@@ -11,20 +14,38 @@ from controllers.orders import orders_bp
 from controllers.purchases import purchases_bp
 from controllers.rental import rentals_bp
 from controllers.forum import forum_bp
-from utilities.movie import clean_insert_movies
+
 
 import config.constants
 
 app = Flask(__name__, template_folder=config.constants.template_dir, static_folder=config.constants.static_dir,
             static_url_path='/public')
 
-# Setup DB
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{config.constants.database_file}'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db.init_app(app)
-
 # Init toastr
 toastr = Toastr(app)
+
+
+async def setup_indexes():
+    db = await get_db()
+
+    await db.Movies.create_index([("_id", 1)])  # Default index on _id
+    await db.Movies.create_index([("title", 1)])  # Index for title
+    await db.Movies.create_index([("users_id", 1)])  # Index for title
+
+    await db.reviews.create_index([("movies_id", 1)])  # Index for movies_id
+    await db.reviews.create_index([("users_id", 1)])  # Index for users_id
+
+    await db.threads.create_index([("_id", 1)])  # Default index
+    await db.threads.create_index([("users_id", 1)])  # Index for users creating threads
+
+    await db.posts.create_index([("thread_id", 1)])  # Index for post related to thread
+    await db.posts.create_index([("users_id", 1)])  # Index for users_id
+
+    await db.orders.create_index([("movie_id", 1)])  # Index movie_id
+    await db.orders.create_index([("users_id", 1)])  # Index for users_id
+
+    print("Indexes created successfully!")
+
 
 # Register blueprints
 app.register_blueprint(index_bp)
@@ -37,20 +58,13 @@ app.register_blueprint(purchases_bp)
 app.register_blueprint(rentals_bp)
 app.register_blueprint(forum_bp)
 
-from models.movie import Movie
-from models.user import User
-from models.review import Review
-from models.order import Order
-from models.purchases import Purchases, History
-from models.forum import Thread, Post
 
-with app.app_context():
-    # ABSOLUTELY DO NOT UNCOMMENT, TESTING PURPOSES ONLY
-    # db.drop_all()
-    # Movie.__table__.drop(db.engine)
+@app.template_filter('format_datetime')
+def format_datetime(value, format="%Y-%m-%d %H:%M:%S"):
+    if isinstance(value, datetime.datetime):
+        return value.strftime(format)
+    return value
 
-    # Create tables
-    db.create_all()
 
 if __name__ == '__main__':
     # App config
@@ -58,7 +72,10 @@ if __name__ == '__main__':
     app.permanent_session_lifetime = timedelta(hours=2)
     app.secret_key = config.constants.app_secret_key
 
-    with app.app_context():
-        # Insert movies (15-20 min)
-        clean_insert_movies()
-    app.run()
+    loop = asyncio.get_event_loop()
+    if loop.is_running():
+        loop.create_task(setup_indexes())
+    else:
+        loop.run_until_complete(setup_indexes())
+    
+app.run(host='0.0.0.0', port=5000)

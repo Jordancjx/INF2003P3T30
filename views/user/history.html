@@ -22,11 +22,11 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {% for history, purchase_timestamp in history_items %}
+                                {% for item in history_items %}
                                 <tr class="animated faster">
-                                    <td class="align-middle" headers="name">{{ history.movie_name }}</td>
-                                    <td class="align-middle" headers="price">${{ history.price }}</td>
-                                    <td class="align-middle" headers="date">{{ purchase_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td class="align-middle" headers="name">{{ item['movie_name'] }}</td>
+                                    <td class="align-middle" headers="price">${{ item['price'] }}</td>
+                                    <td class="align-middle" headers="date">{{ item['purchase_timestamp'].strftime('%Y-%m-%d %H:%M:%S') }}</td>
                                 </tr>
                                 {% endfor %}
                                 </tbody>

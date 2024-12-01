@@ -1,15 +1,13 @@
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
-from sqlalchemy import text
-from config.dbConnect import db
 from datetime import datetime
 import config.constants
-from models.purchases import Purchases, History
-from models.order import Order
-from models.movie import Movie 
+from config.dbConnect import get_db, get_client_and_db
+from bson import ObjectId
 
 # Define the Blueprint for purchases
 purchases_bp = Blueprint('purchases', __name__, template_folder=config.constants.template_dir,
                          static_folder=config.constants.static_dir, static_url_path='/public', url_prefix='/purchases')
+
 
 # Payment Form
 @purchases_bp.route('/api/payment', methods=['GET'])
@@ -25,8 +23,9 @@ def payment():
     # Render the payment form
     return render_template('/user/payment.html', total_sum=total_sum)
 
+
 @purchases_bp.route('/api/payment', methods=['POST'])
-def process_payment():
+async def process_payment():
     # Check if user is logged in
     if 'user_id' not in session:
         flash("Please log in to proceed with payment.", 'error')
@@ -38,67 +37,91 @@ def process_payment():
     full_name = request.form.get('full_name')
     card_pin = request.form.get('card_pin')
 
-    with current_app.app_context():
-        try:
-            # Calculate total_sum based on the user's cart items
-            total_sum = db.session.query(db.func.sum(Order.total_price)).filter_by(users_id=user_id).scalar()
-            if total_sum is None:
-                total_sum = 0  # Set to 0 if there are no items in the cart
+    client, db = await get_client_and_db()
 
-            # Insert the payment into the purchases table
-            new_purchase = Purchases(
-                card_number=card_number,
-                expiry_date=expiry_date,
-                full_name=full_name,
-                card_pin=card_pin,
-                amount=total_sum,
-                users_id=user_id
-            )
-            db.session.add(new_purchase)
-            db.session.commit()
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                # Calculate total_sum based on the user's cart items
+                orders = await db.orders.find({"users_id": ObjectId(user_id)}).to_list(length=None)
+                total_sum = sum(order["total_price"] for order in orders)
 
-            # Get the ID of the newly inserted purchase
-            purchase_id = new_purchase.id
+                # Insert the payment into the purchases collection
+                new_purchase = {
+                    "card_number": card_number,
+                    "expiry_date": expiry_date,
+                    "full_name": full_name,
+                    "card_pin": card_pin,
+                    "amount": total_sum,
+                    "users_id": ObjectId(user_id),
+                    "purchase_timestamp": datetime.now()
+                }
+                purchase_result = await db.purchases.insert_one(new_purchase, session=client_session)
+                purchase_id = purchase_result.inserted_id
 
-            # Fetch current user's orders from the orders table
-            cart_items = db.session.query(Order, Movie).join(Movie, Order.movie_id == Movie.id).filter(Order.users_id == user_id).all()
+                # Fetch current user's orders from the orders collection
+                cart_items = await db.orders.find({"users_id": ObjectId(user_id)}).to_list(length=None)
 
-            # Insert each order into the history table
-            for order, movie in cart_items:
-                history_item = History(
-                    purchase_id=purchase_id,
-                    movie_id=order.movie_id,
-                    movie_name=movie.name,
-                    price=order.total_price
-                )
-                db.session.add(history_item)
+                # Insert each order into the history collection
+                for order in cart_items:
+                    movie = await db.Movies.find_one({"_id": ObjectId(order["movie_id"])})
+                    if movie:
+                        history_item = {
+                            "purchase_id": ObjectId(purchase_id),
+                            "movie_id": ObjectId(order["movie_id"]),
+                            "movie_name": movie["title"],
+                            "price": order["total_price"]
+                        }
+                        await db.history.insert_one(history_item, session=client_session)
 
-            # Delete the purchased items from the orders table
-            db.session.query(Order).filter_by(users_id=user_id).delete()
+                # Delete the purchased items from the orders collection
+                await db.orders.delete_many({"users_id": ObjectId(user_id)}, session=client_session)
 
-            # Commit all changes
-            db.session.commit()
+                flash('Payment processed successfully.', 'success')
+                return redirect(url_for('purchases.view_history'))
 
-            flash('Payment processed successfully.', 'success')
-            return redirect(url_for('purchases.view_history'))
-        except Exception as e:
-            db.session.rollback()
-            flash('An error occurred during the payment process.', 'error')
-            return redirect(url_for('user.cart'))
+            except Exception as e:
+                print(e)
+                flash('An error occurred during the payment process.', 'error')
+                return redirect(url_for('user.cart'))
+
 
 #order history
 @purchases_bp.route('/history')
-def view_history():
+async def view_history():
     # Check if the user is logged in
     if 'user_id' not in session:
         flash("Please log in to view your order history.", "error")
         return redirect(url_for('user.login'))
 
     user_id = session['user_id']
-    
-    with current_app.app_context():
-        # Fetch user's order history by joining history and purchases tables
-        history_items = db.session.query(History, Purchases.purchase_timestamp).join(Purchases, History.purchase_id == Purchases.id).filter(Purchases.users_id == user_id).all()
+
+    db = await get_db()
+
+    # Fetch user's order history by joining history and purchases collections
+    history_items = await db.history.aggregate([
+        {
+            "$lookup": {
+                "from": "purchases",
+                "localField": "purchase_id",
+                "foreignField": "_id",
+                "as": "purchase_info"
+            }
+        },
+        {
+            "$match": {"purchase_info.users_id": ObjectId(user_id)}
+        },
+        {
+            "$unwind": "$purchase_info"
+        },
+        {
+            "$project": {
+                "movie_name": 1,
+                "price": 1,
+                "purchase_timestamp": "$purchase_info.purchase_timestamp"
+            }
+        }
+    ]).to_list(length=None)
 
     # Render the history.html template, passing the fetched history items
     return render_template('/user/history.html', history_items=history_items)

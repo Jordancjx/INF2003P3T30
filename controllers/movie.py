@@ -1,12 +1,10 @@
-from flask import Blueprint, render_template, flash, request, redirect, current_app, url_for, session
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session
 import config.constants
-from sqlalchemy import text
-from config.dbConnect import db
-from models.movie import Movie
+from config.dbConnect import get_db, get_client_and_db
 from werkzeug.utils import secure_filename
-from models.review import Review
 import os
 from datetime import datetime, timedelta
+from bson import ObjectId
 
 movies_bp = Blueprint('movie', __name__, template_folder=config.constants.template_dir,
                       static_folder=config.constants.static_dir, static_url_path='/public', url_prefix='/movie')
@@ -21,12 +19,12 @@ def allowed_file(filename):
 
 @movies_bp.route('/add')
 def add():
-    #check if user is logged in and is admin
+    # check if user is logged in and is admin
     if 'user_id' not in session or 'admin' not in session:
         flash('You must be logged in as an admin to add a movie.', 'error')
         return redirect(url_for('index.index'))
-    
-    #if user is logged in, render the add movie page
+
+    # if user is logged in, render the add movie page
     return render_template('movie/add.html')
 
 
@@ -36,176 +34,208 @@ def search():
     return redirect(url_for('index.index', searchName=search_name))
 
 
-@movies_bp.route('/single/<int:id>', methods=['GET'])
-def single(id):
+@movies_bp.route('/single/<string:id>', methods=['GET'])
+async def single(id):
     rental_period_days = 7  # Rental period of 7 days
     rental_expiry = None
     is_active = None
     review_exists = False
+    user_id = None
 
-    with current_app.app_context():
-        if 'user_id' in session:
-            user_id = session['user_id']
+    db = await get_db()
 
-            # Fetch movie details
-            sql = text("""
-                        SELECT m.*, p.purchase_timestamp AS rental_date 
-                        FROM movies m
-                        LEFT JOIN history h ON h.movie_id = m.id
-                        LEFT JOIN purchases p ON p.id = h.purchase_id AND p.users_id = :user_id
-                        WHERE m.id = :movie_id
-                    """)
-            movie_result = db.session.execute(sql, {"movie_id": id, 'user_id': user_id})
-            movie = movie_result.fetchone()
-            is_active = False
+    if 'user_id' in session:
+        movie = await db.Movies.find_one({"_id": ObjectId(id)}), {"name": 1, "genres": 1, "language": 1, "description": 1}
 
-            # Calculate the rental expiry date of movie
-            if movie.rental_date:
-                rental_expiry = datetime.strptime(movie.rental_date, "%Y-%m-%d %H:%M:%S.%f") + timedelta(days=rental_period_days)
-                is_active = rental_expiry >= datetime.now()  # Check if rental is still active
+        if not movie:
+            flash('Movie not found', 'error')
+            return redirect(url_for('index.index'))
 
-            # Check if the user has already left a review for this movie
-            sql = text("""
-                SELECT COUNT(*) 
-                FROM reviews 
-                WHERE users_id = :user_id AND movies_id = :movie_id
-            """)
-            review_check = db.session.execute(sql, {"user_id": user_id, "movie_id": id}).fetchone()
-            if review_check[0] > 0:
-                review_exists = True
+        # Fetch all reviews for the movie
+        # reviews = list(db.reviews.find({"movies_id": ObjectId(id)}).sort("timestamp", -1))
 
-            # Fetch all reviews for the movie
-            sql = text("""
-                SELECT r.*, u.username 
-                FROM reviews r
-                JOIN users u ON r.users_id = u.id
-                WHERE r.movies_id = :movie_id
-            """)
-            reviews_result = db.session.execute(sql, {"movie_id": id})
-            reviews = reviews_result.fetchall()
+        reviews = await db.reviews.aggregate([
+            {
+                "$match": {"movies_id": ObjectId(id)}
+            },
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "users_id",
+                    "foreignField": "_id",
+                    "as": "user_info"
+                }
+            },
+            {
+                "$unwind": "$user_info"
+            },
+            {
+                "$project": {
+                    "rating": 1,
+                    "body": 1,
+                    "movies_id": 1,
+                    "user_info.username": 1,
+                    "user_info._id": {"$toString": "$user_info._id"},
+                }
+            }
+        ]).to_list(length=None)
 
-        else:
-            sql = text("SELECT * FROM movies "
-                       "LEFT JOIN reviews ON movies.id = reviews.movies_id "
-                       "LEFT JOIN users ON reviews.users_id = users.id "
-                       "WHERE movies.id = :id")
-            result = db.session.execute(sql, {"id": id})
-            rows = result.fetchall()
+        user_id = str(session.get('user_id')) if 'user_id' in session else None
 
-            if not rows:
-                flash('Movie not found', 'error')
-                return redirect(url_for('index.index'))
+        for review in reviews:
+            review['user_info']['_id'] = str(review['user_info']['_id'])
+            if review['user_info']['_id'] == user_id:
+                review['user_info']['user'] = 1
+            else:
+                review['user_info']['user'] = 0
 
-            movie = rows[0]
-            reviews = [row for row in rows if row.id]
+        review_check = await db.reviews.count_documents({"users_id": user_id, "movies_id": ObjectId(id)})
+        review_exists = review_check > 0
 
-        return render_template('movie/single.html', movie=movie, reviews=reviews, rental_expiry=rental_expiry, is_active=is_active, review_exists=review_exists)
+        # Find the most recent purchase timestamp for this movie by the user
+        purchase = await db.purchases.find_one({"users_id": ObjectId(user_id)})
+        if purchase:
+            history = await db.history.find_one({
+                "purchase_id": ObjectId(purchase["_id"]),
+                "movie_id": ObjectId(id)
+            })
+
+            if history:
+                purchase_timestamp = purchase["purchase_timestamp"]
+                rental_expiry = purchase_timestamp + timedelta(days=rental_period_days)
+                is_active = rental_expiry >= datetime.now()
+
+                # Pass rental_expiry to the template
+                rental_expiry = rental_expiry.strftime('%d-%m-%Y')  # Formatting the date as required
+            else:
+                rental_expiry = None
+                is_active = False
+
+    else:
+        movie = await db.Movies.find_one({"_id": ObjectId(id)}), {"name": 1, "genres": 1, "language": 1, "description": 1}
+        if not movie:
+            flash('Movie not found', 'error')
+            return redirect(url_for('index.index'))
+
+        reviews = await db.Reviews.find({"movies_id": ObjectId(id)}).sort("timestamp", -1).to_list(length=None)
+
+    return render_template('movie/single.html', movie=movie[0], review_exists=review_exists, reviews=reviews,
+                           user_id=user_id, is_active=is_active, rental_expiry=rental_expiry)
 
 
 # Api to add movies, won't render any page
 @movies_bp.route('/api/add', methods=['POST'])
-def post_add_movie():
-     #check if user is logged in and is admin
+async def post_add_movie():
+    # check if user is logged in and is admin
     if 'user_id' not in session or 'admin' not in session:
         flash('You must be logged in as an admin to add a movie.', 'error')
         return redirect(url_for('index.index'))
 
-    with current_app.app_context():
-        try:
-            poster_url = None
-            if 'image_file' in request.files:
-                file = request.files['image_file']
-                if file.filename != '':
-                    if file and allowed_file(file.filename):
-                        filename = secure_filename(file.filename)
-                        file_path = os.path.join(UPLOAD_FOLDER, filename)
-                        file.save(file_path)
-                        poster_url = f"/{file_path}"
+    client, db = await get_client_and_db()
 
-            sql = text(
-                "INSERT INTO movies (name, synopsis, release_date, runtime, price, image_url, trailer_link) "
-                "VALUES (:name, :synopsis, :release_date, :runtime, :price, :image_url, :trailer_link)")
-            result = db.session.execute(sql, {
-                "name": request.form.get('moviename'),
-                "synopsis": request.form.get("synopsis"),
-                "release_date": request.form.get("release_date"),
-                "runtime": request.form.get("runtime"),
-                "price": request.form.get("price"),
-                "image_url": poster_url,
-                "trailer_link": request.form.get("trailer_link")
-            })
-            db.session.commit()
-            flash('Movie has been added.', 'success')
-            return redirect(url_for('movie.add'))
-        except Exception as e:
-            print(e)
-            flash('An error has occurred.', 'error')
-            return redirect(url_for('movie.add'))
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                poster_url = None
+                if 'image_file' in request.files:
+                    file = request.files['image_file']
+                    if file.filename != '':
+                        if file and allowed_file(file.filename):
+                            filename = secure_filename(file.filename)
+                            file_path = os.path.join(UPLOAD_FOLDER, filename)
+                            file.save(file_path)
+                            poster_url = f"/{file_path}"
+
+                movie_document = {
+                    "title": request.form.get('moviename'),
+                    "overview": request.form.get("synopsis"),
+                    "release_date": request.form.get("release_date"),
+                    "runtime": request.form.get("runtime"),
+                    "price": request.form.get("price"),
+                    "poster_path": poster_url,
+                    "trailer_link": request.form.get("trailer_link")
+                }
+
+                await db.Movies.insert_one(movie_document, session=client_session)
+
+                flash('Movie has been added.', 'success')
+                return redirect(url_for('movie.add'))
+            except Exception as e:
+                print(e)
+                flash('An error has occurred.', 'error')
+                return redirect(url_for('movie.add'))
 
 
 # Api to update movies, won't render any page
 @movies_bp.route("/api/update", methods=['POST'])
-def post_update_movie():
+async def post_update_movie():
     rq = request.form
     id = rq.get('movie_id')
-    # langs = rq.getlist('langs[]')
 
-    with current_app.app_context():
-        sql = text("SELECT * FROM movies WHERE id = :id")
-        result = db.session.execute(sql, {"id": id})
-        movie = result.fetchone()
+    client, db = await get_client_and_db()
 
-        if movie:
-            sql = text(
-                "UPDATE movies "
-                "SET name=:name, synopsis=:synopsis, price=:price, runtime=:runtime, release_date=:release_date")
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                movie = await db.Movies.find_one({"_id": ObjectId(id)})
 
-            name = rq.get('moviename')
-            synopsis = rq.get('synopsis')
-            price = rq.get('price')
-            runtime = rq.get('runtime')
-            release_date = rq.get('release_date')
-            # movie.trailer_link = rq.get("trailer_link")
+                if movie:
+                    updated_fields = {
+                        "title": rq.get('moviename'),
+                        "overview": rq.get('synopsis'),
+                        "price": rq.get('price'),
+                        "runtime": rq.get('runtime'),
+                        "release_date": rq.get('release_date')
+                    }
 
-            db.session.execute(sql, {"name": name, "synopsis": synopsis, "price": price, "runtime": runtime,
-                                     "release_date": release_date})
-            db.session.commit()
+                    await db.Movies.update_one(
+                        {"_id": ObjectId(id)},
+                        {"$set": updated_fields}, session=client_session
+                    )
 
-            return redirect(url_for('movie.single', id=id))
-        else:
-            flash('Movie not found', 'error')
-            return redirect(url_for('index.index'))
+                    return redirect(url_for('movie.single', id=id))
+                else:
+                    flash('Movie not found', 'error')
+                    return redirect(url_for('index.index'))
 
-
-@movies_bp.route('/update/<int:id>')
-def update_movie(id):
-    with current_app.app_context():
-        sql = text("SELECT * FROM movies WHERE id = :id")
-        result = db.session.execute(sql, {"id": id})
-        movie = result.fetchone()
-
-        if movie is None:
-            flash('Movie not found', 'error')
-            return redirect(url_for('index.index'))
-
-        return render_template('movie/update.html', movie=movie)
+            except Exception as e:
+                print(e)
+                flash('An error has occurred.', 'error')
+                return redirect(url_for('movie.update_movie', id=id))
 
 
-@movies_bp.route('/api/delete/<int:id>', methods=['POST'])
-def delete_movie(id):
-    with current_app.app_context():
-        print(id)
-        sql = text("SELECT * FROM movies WHERE id = :id")
-        result = db.session.execute(sql, {"id": id})
-        movie = result.fetchone()
+@movies_bp.route('/update/<string:id>')
+async def update_movie(id):
+    db = await get_db()
 
-        if movie is None:
-            flash('Movie not found', 'error')
-            return redirect(url_for('index.index'))
+    movie = await db.Movies.find_one({"_id": ObjectId(id)})
 
-        sql = text('DELETE from movies WHERE id = :id')
-        db.session.execute(sql, {'id': id})
-        db.session.commit()
-
-        flash('Movie deleted successfully!', 'success')
+    if movie is None:
+        flash('Movie not found', 'error')
         return redirect(url_for('index.index'))
+
+    return render_template('movie/update.html', movie=movie)
+
+
+@movies_bp.route('/api/delete/<string:id>', methods=['POST'])
+async def delete_movie(id):
+    client, db = await get_client_and_db()
+
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                movie = await db.Movies.find_one({"_id": ObjectId(id)})
+
+                if movie is None:
+                    flash('Movie not found', 'error')
+                    return redirect(url_for('index.index'))
+
+                await db.Movies.delete_one({"_id": ObjectId(id)}, session=client_session)
+
+                flash('Movie deleted successfully!', 'success')
+                return redirect(url_for('index.index'))
+
+            except Exception as e:
+                print(e)
+                flash('An error has occurred.', 'error')
+                return redirect(url_for('index.index'))

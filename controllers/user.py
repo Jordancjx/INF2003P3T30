@@ -1,8 +1,7 @@
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash, current_app
-from sqlalchemy import text
+from bson import ObjectId
+from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
 import config.constants
-from config.dbConnect import db
-from models.user import User
+from config.dbConnect import get_db, get_client_and_db
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
@@ -41,56 +40,61 @@ def logout():
 
 # Profile
 @user_bp.route('/profile')
-def getProfile():
+async def getProfile():
+    db = await get_db()
+
     # Check if user is logged in
     if 'user_id' not in session:
         flash("Please log in to view your profile.", "error")
         return redirect(url_for('user.login'))
 
-    with current_app.app_context():
-        sql = text("SELECT * FROM users WHERE id = :id")
-        result = db.session.execute(sql, {"id": session['user_id']})
-        user = result.fetchone()
+    user = await db.users.find_one({"_id": ObjectId(session['user_id'])})
 
-        if user is None:
-            flash("User not found.", "error")
-            return redirect(url_for('user.login'))
+    if user is None:
+        flash("User not found.", "error")
+        return redirect(url_for('user.login'))
 
     return render_template('/user/profile.html', user=user)
 
 
 # cart
 @user_bp.route('/cart')
-def cart():
+async def cart():
     # Check if user is logged in
     if 'user_id' not in session:
         flash("Please log in to view your cart.", "error")
         return redirect(url_for('user.login'))
 
     user_id = session['user_id']
-    with current_app.app_context():
-        # Fetch the user's orders and join with the movies table to get movie names
-        sql = text("""
-            SELECT orders.id, orders.order_timestamp, orders.total_price, movies.name 
-            FROM orders 
-            JOIN movies ON orders.movie_id = movies.id 
-            WHERE orders.users_id = :user_id
-        """)
-        result = db.session.execute(sql, {"user_id": user_id})
-        orders = result.fetchall()
+    db = await get_db()
 
-        # Calculate the total sum of prices
-        total_sum_sql = text("SELECT COALESCE(SUM(total_price), 0) as total_sum FROM orders WHERE users_id = :user_id")
-        total_sum_result = db.session.execute(total_sum_sql, {"user_id": user_id})
-        total_sum = total_sum_result.fetchone().total_sum
+    # Fetch the user's orders and join with the movies table to get movie names
+    orders = await db.orders.aggregate([
+        {"$match": {"users_id": ObjectId(user_id)}},
+        {"$lookup": {
+            "from": "Movies",
+            "localField": "movie_id",
+            "foreignField": "_id",
+            "as": "movie_details"
+        }},
+        {"$unwind": "$movie_details"},
+        {"$addFields": {"movie_name": "$movie_details.title"}},
+        {"$project": {
+            "movie_name": 1,
+            "total_price": 1,
+            "order_timestamp": 1
+        }}
+    ]).to_list(length=None)
 
-        # Pass the fetched data to the cart template
-        return render_template('/user/cart.html', orders=orders, total_sum=total_sum)
+    total_sum = sum(order.get("total_price", 0) for order in orders)
+
+    # Pass the fetched data to the cart template
+    return render_template('/user/cart.html', orders=orders, total_sum=total_sum)
 
 
 # Register API; Does not render any page
 @user_bp.route('/api/register', methods=["POST"])
-def register_process():
+async def register_process():
     hashed_password = generate_password_hash(request.form.get('password'), method='pbkdf2:sha256', salt_length=16)
     username = request.form.get('username')
     fname = request.form.get('fname')
@@ -98,49 +102,51 @@ def register_process():
     email = request.form.get('email')
 
     if not all([username, fname, lname, email, hashed_password]):
-        flash("Not all fields are filled", "error")
+        flash("Information missing", "error")
         return redirect(url_for('user.register'))
 
-    with current_app.app_context():
-        sql = text("SELECT * FROM users WHERE username = :username OR email = :email")
-        result = db.session.execute(sql, {"username": username, "email": email})
-        existing_user = result.fetchone()
+    client, db = await get_client_and_db()
+    existing_user = await db.users.find_one({"$or": [{"username": username}, {"email": email}]})
 
-        if existing_user:
-            flash("Username or Email already exists", "error")
-            return redirect(url_for('user.register'))
+    if existing_user:
+        flash("Username or Email already exists", "error")
+        return redirect(url_for('user.register'))
 
-        insert = text(
-            "INSERT INTO users (username, fname, lname, email, password, email_validated, admin_controls) "
-            "VALUES (:username, :fname, :lname, :email, :password, :email_validated, :admin_controls)")
+    user_data = {
+        "username": username,
+        "fname": fname,
+        "lname": lname,
+        "email": email,
+        "password": hashed_password,
+        "email_validated": False,
+        "admin_controls": False
+    }
 
-        try:
-            db.session.execute(insert, {"username": username, "fname": fname, "lname": lname, "email": email,
-                                        "password": hashed_password, "email_validated": False, "admin_controls": False})
-            db.session.commit()
-            flash('Registered successfully!', 'success')
-            return redirect(url_for('user.login'))
-        except Exception as e:
-            db.session.rollback()
-            flash('An error has occurred during registration.', "error")
-            return redirect(url_for('user.register'))
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                await db.users.insert_one(user_data, session=client_session)
+                flash('Registered successfully!', 'success')
+                return redirect(url_for('user.login'))
+
+            except Exception as e:
+                flash('An error has occurred during registration.', "error")
+                return redirect(url_for('user.register'))
 
 
 # Login API; Does not render any page
 @user_bp.route('/api/login', methods=["POST"])
-def login_process():
+async def login_process():
     identifier = request.form.get('username')  # This could be either email or username
     password = request.form.get('password')
 
-    with current_app.app_context():
-        sql = text("SELECT * FROM users WHERE username = :identifier OR email = :identifier LIMIT 1")
-        result = db.session.execute(sql, {"identifier": identifier})
-        user = result.fetchone()
+    db = await get_db()
+    user = await db.users.find_one({"$or": [{"username": identifier}, {"email": identifier}]})
 
-    if user and check_password_hash(user.password, password):
-        if user.admin_controls:
+    if user and check_password_hash(user['password'], password):
+        if user.get('admin_controls', False):
             session['admin'] = True
-        session['user_id'] = user.id
+        session['user_id'] = str(user['_id'])
 
         flash('Logged in successfully!', 'success')
         return redirect(url_for('index.index'))
@@ -151,7 +157,7 @@ def login_process():
 
 
 @user_bp.route('/api/update_profile', methods=["POST"])
-def update_profile():
+async def update_profile():
     if 'user_id' not in session:
         flash("Please log in to update your profile.", "error")
         return redirect(url_for('user.login'))
@@ -173,44 +179,40 @@ def update_profile():
                 file.save(file_path)
                 profile_pic_url = f"/{file_path}"
 
-    with current_app.app_context():
-        try:
-            params = {
-                "fname": fname,
-                "lname": lname,
-                "email": email,
-                "user_id": user_id
-            }
+    client, db = await get_client_and_db()
 
-            updatesql = "UPDATE users SET fname = :fname, lname = :lname, email = :email"
+    async with await client.start_session() as client_session:
+        async with client_session.start_transaction():
+            try:
+                update_data = {
+                    "fname": fname,
+                    "lname": lname,
+                    "email": email,
+                }
 
-            if profile_pic_url:
-                updatesql += ", profile_pic_url = :profile_pic_url"
-                params["profile_pic_url"] = profile_pic_url
+                if profile_pic_url:
+                    update_data["profile_pic_url"] = profile_pic_url
 
-            if password:
-                stored_password_sql = text("SELECT password FROM users WHERE id = :user_id")
-                stored_password_result = db.session.execute(stored_password_sql, {"user_id": user_id})
-                stored_password = stored_password_result.scalar()
+                if password:
+                    user = await db.users.find_one({"_id": ObjectId(user_id)})
+                    stored_password = user.get("password")
 
-                if not check_password_hash(stored_password, old_password):
-                    flash('Incorrect old password', 'error')
-                    return redirect(url_for('user.getProfile'))
+                    if not check_password_hash(stored_password, old_password):
+                        flash('Incorrect old password', 'error')
+                        return redirect(url_for('user.getProfile'))
 
-                hashed_password = generate_password_hash(password)
-                updatesql += ", password = :password"
-                params["password"] = hashed_password
+                    hashed_password = generate_password_hash(password)
+                    update_data["password"] = hashed_password
 
-            updatesql += " WHERE id = :user_id"
+                await db.users.update_one(
+                    {"_id": ObjectId(user_id)},
+                    {"$set": update_data}, session=client_session
+                )
 
-            db.session.execute(text(updatesql), params)
-            db.session.commit()
+                flash("Profile updated successfully!", "success")
+                return redirect(url_for('user.getProfile'))
 
-            flash("Profile updated successfully!", "success")
-            return redirect(url_for('user.getProfile'))
-
-        except Exception as e:
-            db.session.rollback()
-            print(e)
-            flash("An error occurred while updating the profile", "error")
-            return redirect(url_for('user.getProfile'))
+            except Exception as e:
+                print(e)
+                flash("An error occurred while updating the profile", "error")
+                return redirect(url_for('user.getProfile'))

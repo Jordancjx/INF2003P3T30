@@ -1,3 +1,24 @@
-from flask_sqlalchemy import SQLAlchemy
+from config.constants import DB_NAME, mongo_uri
+from motor.motor_asyncio import AsyncIOMotorClient
 
-db = SQLAlchemy()
+
+async def get_db():
+    try:
+        client = AsyncIOMotorClient(mongo_uri)
+        db = client[DB_NAME]
+        return db
+
+    except Exception as e:
+        print('Error connecting to db')
+        return None
+
+
+async def get_client_and_db():
+    try:
+        client = AsyncIOMotorClient(mongo_uri)
+        db = client[DB_NAME]
+        return client, db
+
+    except Exception as e:
+        print('Error connecting to db')
+        return None
